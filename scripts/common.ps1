@@ -1,4 +1,4 @@
-﻿# Funzioni condivise da install.ps1, toggle.ps1 e uninstall.ps1.
+﻿# Funzioni condivise da install.ps1 e remove-apo.ps1.
 # Nota: questo file evita lettere accentate per compatibilita' con
 # Windows PowerShell 5.1 (che legge gli script senza BOM come ANSI).
 

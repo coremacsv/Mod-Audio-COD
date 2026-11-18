@@ -249,11 +249,11 @@ try {
     Write-Host ('   ' + ('═' * ((Get-FxWidth) - 6))) -ForegroundColor DarkGreen
     Write-Type '   >>> OVERRIDE AUDIO COMPLETATO' Cyan 12
     Write-Host '   Nel gioco: Musica 0 · Effetti al massimo · Audio Mix «Cuffie»' -ForegroundColor Gray
-    Write-Host '   Accendi/spegni il preset con «Attiva-Disattiva.bat».' -ForegroundColor Gray
+    Write-Host '   Per togliere tutto in futuro: «Rimuovi-EqualizerAPO.bat».' -ForegroundColor Gray
     Write-Host ''
 
     $tips = "Consigli nel gioco (Impostazioni › Audio):`n• Musica: 0`n• Effetti: al massimo`n• Audio Mix: Cuffie`n`n" +
-            "Per accendere/spegnere il preset usa «Attiva-Disattiva.bat»."
+            "Per togliere tutto in futuro usa «Rimuovi-EqualizerAPO.bat»."
     if ($needReboot -and -not $NoPause) {
         if (Ask-YesNo ("✅ Fatto! Il preset è installato.`n`nPer attivare Equalizer APO serve un riavvio.`n" +
                        "Salva il tuo lavoro: vuoi riavviare adesso? (il PC si riavvia tra 15 secondi)`n`n$tips")) {

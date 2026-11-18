@@ -85,13 +85,8 @@ if ($devs.Count -eq 0) {
     Check 'install x2: nessun duplicato' { (CountLines (Cfg $sb) 'warzone_passi\.txt') -eq 1 }
     1..12 | ForEach-Object { [void](Backup-Config $sb) }
     Check 'backup: ne tiene al massimo 10' { @(Get-ChildItem (Join-Path $sb 'footstep-eq-backup')).Count -eq 10 }
-    $r = Run 'toggle.ps1' $sb
-    Check 'toggle: spento' { (Get-IncludeState (Cfg $sb)) -eq 'disabled' -and $r.Out -match 'SPENTO' }
-    $r = Run 'toggle.ps1' $sb
-    Check 'toggle: riacceso' { (Get-IncludeState (Cfg $sb)) -eq 'active' -and $r.Out -match 'ACCESO' }
-    $r = Run 'uninstall.ps1' $sb
-    Check 'uninstall: config identico all''originale' { (Cfg $sb).Trim() -eq $orig.Trim() }
-    Check 'uninstall: preset rimosso' { -not (Test-Path (Join-Path $sb 'warzone_passi.txt')) }
+    Set-IncludeState $sb 'removed'
+    Check 'togliendo la riga del preset il config torna identico all''originale' { (Cfg $sb).Trim() -eq $orig.Trim() }
 
     $sb2 = New-Sandbox $null
     $r = Run 'install.ps1' $sb2
@@ -99,8 +94,6 @@ if ($devs.Count -eq 0) {
     $sb3 = New-Sandbox "Include: a.txt`nInclude: b.txt"
     [void](Run 'install.ps1' $sb3)
     Check 'config con fine riga LF: righe conservate' { $c = Cfg $sb3; $c.Contains('Include: a.txt') -and $c.Contains('Include: b.txt') -and (Get-IncludeState $c) -eq 'active' }
-    $r = Run 'toggle.ps1' (New-Sandbox "x")
-    Check 'toggle senza preset: errore gestito' { $r.Code -eq 1 -and $r.Out -match 'Installa\.bat' }
 }
 
 Write-Host "`n== Rimozione di Equalizer APO (solo prova, nessuna modifica) ==" -ForegroundColor Cyan

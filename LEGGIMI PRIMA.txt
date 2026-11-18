@@ -22,4 +22,7 @@ FOOTSTEP EQ for Warzone - LEGGIMI PRIMA
 4) Da qui in poi segui la finestra-guida in basso a destra:
    ti dice cosa cliccare a ogni passaggio.
 
+PER TOGLIERE TUTTO in qualsiasi momento: doppio clic su
+Rimuovi-EqualizerAPO.bat  (l'audio di Windows torna com'era prima).
+
 Non modifica alcun file del gioco. Progetto non affiliato con Activision.

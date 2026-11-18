@@ -3,13 +3,18 @@ FOOTSTEP EQ for Warzone - LEGGIMI PRIMA
 
 1) Fai doppio clic su  Installa.bat
 
-2) Windows potrebbe mostrare un avviso blu "PC protetto da Windows".
-   E' normale per i programmi scaricati da Internet che non sono
-   venduti da una grande azienda. Per continuare:
+2) Windows potrebbe mostrare un avviso. E' normale per i programmi
+   scaricati da Internet che non hanno una firma digitale a pagamento.
+   Puo' comparire in due forme:
 
-      clicca "Ulteriori informazioni"  ->  "Esegui comunque"
+   a) Finestra "Apri file - Avviso di sicurezza"
+      "Impossibile verificare l'autore. Eseguire il software?"
+         ->  clicca "Esegui"
 
-   (Per evitare l'avviso: PRIMA di estrarre lo ZIP, tasto destro
+   b) Schermata blu "PC protetto da Windows"
+         ->  clicca "Ulteriori informazioni"  ->  "Esegui comunque"
+
+   (Per evitare gli avvisi: PRIMA di estrarre lo ZIP, tasto destro
     sullo ZIP > Proprieta' > spunta "Sblocca" > OK, poi estrai.)
 
 3) Premi "Si" quando Windows chiede i permessi di amministratore.

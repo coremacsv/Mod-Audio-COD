@@ -128,6 +128,8 @@ function Backup-Config([string]$ConfigDir) {
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
     $dest = Join-Path $dir ("config.{0}.txt" -f (Get-Date -Format 'yyyyMMdd-HHmmss-fff'))
     Write-Shared $dest (Read-Shared $cfg)
+    # Tiene solo gli ultimi 10 backup.
+    Get-ChildItem $dir -Filter 'config.*.txt' | Sort-Object Name -Descending | Select-Object -Skip 10 | Remove-Item -Force -ErrorAction SilentlyContinue
     $dest
 }
 

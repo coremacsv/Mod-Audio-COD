@@ -71,6 +71,8 @@ if ($devs.Count -eq 0) {
     Check 'install: backup creato' { @(Get-ChildItem (Join-Path $sb 'footstep-eq-backup')).Count -ge 1 }
     $r = Run 'install.ps1' $sb
     Check 'install x2: nessun duplicato' { (CountLines (Cfg $sb) 'warzone_passi\.txt') -eq 1 }
+    1..12 | ForEach-Object { [void](Backup-Config $sb) }
+    Check 'backup: ne tiene al massimo 10' { @(Get-ChildItem (Join-Path $sb 'footstep-eq-backup')).Count -eq 10 }
     $r = Run 'toggle.ps1' $sb
     Check 'toggle: spento' { (Get-IncludeState (Cfg $sb)) -eq 'disabled' -and $r.Out -match 'SPENTO' }
     $r = Run 'toggle.ps1' $sb

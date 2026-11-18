@@ -22,7 +22,9 @@ Questo progetto installa un preset di equalizzazione per **[Equalizer APO](https
 1. Scarica questo progetto: **Code → Download ZIP**.
    *Consigliato:* prima di estrarlo, tasto destro sullo ZIP → **Proprietà** → spunta **Sblocca** → **OK**. Così Windows non mostrerà avvisi.
 2. Estrai lo ZIP e fai doppio clic su **`Installa.bat`**.
-   - Se compare l'avviso blu **"PC protetto da Windows"**, clicca **Ulteriori informazioni → Esegui comunque**. Windows lo mostra per tutti i programmi scaricati da Internet che non sono firmati da una grande azienda.
+   - Windows può mostrare un avviso, normale per i programmi scaricati da Internet senza firma digitale a pagamento:
+     - finestra **"Apri file - Avviso di sicurezza"** (*Impossibile verificare l'autore*) → clicca **Esegui**;
+     - schermata blu **"PC protetto da Windows"** → **Ulteriori informazioni → Esegui comunque**.
    - Premi **Sì** quando Windows chiede i permessi di amministratore.
 3. In basso a destra compare una **finestra-guida** che ti dice cosa cliccare a ogni passaggio e si aggiorna da sola:
    - se **Equalizer APO non è installato**, lo scarica dalla pagina ufficiale, controlla che il file sia quello originale e ne avvia l'installazione;

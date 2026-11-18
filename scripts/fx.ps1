@@ -58,7 +58,7 @@ function Show-Banner {
     Write-Host '  ' -NoNewline
     Write-Host ' by ' -NoNewline -ForegroundColor Black -BackgroundColor Magenta
     Write-Host ' Lozy ' -NoNewline -ForegroundColor White -BackgroundColor DarkMagenta
-    Write-Type '  ░▒▓ signed release' DarkMagenta 6
+    Write-Type '  ░▒▓ release v1.0' DarkMagenta 6
     Write-Host ''
     foreach ($l in $art) { Write-Host $l -ForegroundColor Green; Start-FxSleep 40 }
     Write-Host ''

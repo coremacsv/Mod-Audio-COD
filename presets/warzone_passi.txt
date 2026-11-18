@@ -1,0 +1,38 @@
+# ==========================================================
+#  Footstep EQ for Warzone - preset per Equalizer APO
+#  Passi, ricariche e cambi arma piu' chiari; meno rimbombo
+#  da esplosioni. Non modifica alcun file del gioco.
+#
+#  Progetto non affiliato con Activision.
+# ==========================================================
+
+# Applica il preset SOLO alle uscite audio (cuffie) selezionate
+# dall'installer. Il microfono non viene toccato.
+{{DEVICE_LINE}}
+Channel: all
+
+# Abbassa il volume generale per evitare distorsioni causate dai
+# boost qui sotto. Se senti basso, alza il volume di Windows.
+Preamp: -6 dB
+
+# --- BASSI: meno rimbombo da esplosioni, killstreak e veicoli ---
+Filter: ON LSC Fc 120 Hz Gain -4 dB Q 0.7
+Filter: ON PK Fc 250 Hz Gain -2 dB Q 1.0
+
+# --- MEDI: un filo di presenza in piu' ---
+Filter: ON PK Fc 1000 Hz Gain 1 dB Q 1.0
+
+# --- MEDIO-ALTI: passi, ricariche, cambi arma ---
+Filter: ON PK Fc 2500 Hz Gain 4 dB Q 1.2
+Filter: ON PK Fc 4000 Hz Gain 4 dB Q 1.4
+
+# --- ACUTI: meno affaticamento nelle sessioni lunghe ---
+Filter: ON HSC Fc 9000 Hz Gain -2 dB Q 0.7
+
+# ----------------------------------------------------------
+#  REGOLAZIONI RAPIDE (modifica "Gain", salva: effetto immediato)
+#  - Passi ancora deboli?       2500/4000 Hz a +5 o +6 dB
+#  - Suono troppo metallico?    2500/4000 Hz a +2 o +3 dB
+#  - Esplosioni coprono ancora? 120 Hz a -6 dB
+#  - Suono troppo vuoto?        120 Hz a -2 dB
+# ----------------------------------------------------------

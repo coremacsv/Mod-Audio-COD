@@ -1,0 +1,20 @@
+FOOTSTEP EQ for Warzone - LEGGIMI PRIMA
+=======================================
+
+1) Fai doppio clic su  Installa.bat
+
+2) Windows potrebbe mostrare un avviso blu "PC protetto da Windows".
+   E' normale per i programmi scaricati da Internet che non sono
+   venduti da una grande azienda. Per continuare:
+
+      clicca "Ulteriori informazioni"  ->  "Esegui comunque"
+
+   (Per evitare l'avviso: PRIMA di estrarre lo ZIP, tasto destro
+    sullo ZIP > Proprieta' > spunta "Sblocca" > OK, poi estrai.)
+
+3) Premi "Si" quando Windows chiede i permessi di amministratore.
+
+4) Da qui in poi segui la finestra-guida in basso a destra:
+   ti dice cosa cliccare a ogni passaggio.
+
+Non modifica alcun file del gioco. Progetto non affiliato con Activision.

@@ -1,5 +1,5 @@
 ﻿<#
-  Test automatici di Footstep EQ. Non modificano il sistema: lavorano in una
+  Test automatici di Mod Audio COD. Non modificano il sistema: lavorano in una
   cartella temporanea e non scaricano niente da Internet.
     powershell -ExecutionPolicy Bypass -File tests\run-tests.ps1
 #>

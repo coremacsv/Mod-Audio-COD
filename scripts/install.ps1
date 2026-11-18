@@ -1,5 +1,5 @@
 ﻿<#
-  Footstep EQ for Warzone - installer guidato.
+  Mod Audio COD - installer guidato.
 
   Cosa fa, da solo:
     1. controlla se Equalizer APO è installato;

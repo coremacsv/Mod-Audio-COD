@@ -144,10 +144,10 @@ function Remove-ApoRegKey {
     $out = & reg.exe delete 'HKLM\SOFTWARE\EqualizerAPO' /f /reg:64 2>&1
     if ($LASTEXITCODE -ne 0 -or (Test-Path 'HKLM:\SOFTWARE\EqualizerAPO')) { throw "Impossibile cancellare la chiave di registro di Equalizer APO: $out" }
 }
-# Copia l'intera cartella config in Documenti\Footstep EQ - backup\<data>.
+# Copia l'intera cartella config in Documenti\Mod Audio COD - backup\<data>.
 function Backup-ConfigFolder([string]$ConfigDir, [string]$DestRoot = '') {
     if (-not (Test-Path $ConfigDir)) { return $null }
-    if (-not $DestRoot) { $DestRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Footstep EQ - backup' }
+    if (-not $DestRoot) { $DestRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Mod Audio COD - backup' }
     $dest = Join-Path $DestRoot ('config-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
     New-Item -ItemType Directory -Force -Path $dest | Out-Null
     Copy-Item (Join-Path $ConfigDir '*') $dest -Recurse -Force
@@ -236,7 +236,7 @@ function Disable-ApoSampleConfig([string]$ConfigDir) {
     if ($active.Count -eq 0) { return $false }
     if (@($active | Where-Object { -not (Test-ApoSampleLine $_) }).Count -gt 0) { return $false }   # config personalizzato: non si tocca
     $new = $lines | ForEach-Object {
-        if ($_.Trim() -ne '' -and -not $_.Trim().StartsWith('#') -and (Test-ApoSampleLine $_)) { "# [esempio di Equalizer APO, disattivato da Footstep EQ] $($_.Trim())" } else { $_ }
+        if ($_.Trim() -ne '' -and -not $_.Trim().StartsWith('#') -and (Test-ApoSampleLine $_)) { "# [esempio di Equalizer APO, disattivato da Mod Audio COD] $($_.Trim())" } else { $_ }
     }
     Write-Shared $cfg (($new -join "`r`n").TrimEnd() + "`r`n")
     $true

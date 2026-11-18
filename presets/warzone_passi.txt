@@ -1,5 +1,5 @@
 # ==========================================================
-#  Footstep EQ for Warzone - preset per Equalizer APO
+#  Mod Audio COD - preset per Equalizer APO
 #  Passi, ricariche e cambi arma piu' chiari; meno rimbombo
 #  da esplosioni. Non modifica alcun file del gioco.
 #

@@ -1,4 +1,4 @@
-# Footstep EQ for Warzone
+# Mod Audio COD
 
 *by **Lozy***
 
@@ -39,7 +39,7 @@ Doppio clic su **`Rimuovi-EqualizerAPO.bat`**: rimuove **completamente Equalizer
 
 In dettaglio:
 1. chiede conferma, perché smetteranno di funzionare *tutti* gli equalizzatori basati su Equalizer APO (anche Peace o altri preset);
-2. salva una copia di sicurezza di tutti i preset in *Documenti → Footstep EQ - backup*;
+2. salva una copia di sicurezza di tutti i preset in *Documenti → Mod Audio COD - backup*;
 3. avvia il **disinstallatore ufficiale** di Equalizer APO, che lo toglie da tutte le cuffie e i microfoni e cancella **solo i propri file** (mai l'intera cartella in cui era installato);
 4. cancella anche la cartella dei preset e le voci rimaste nel registro: **rimozione pulita**;
 5. controlla che sia tutto rimosso e propone il riavvio.

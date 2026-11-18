@@ -1,5 +1,5 @@
 ﻿<#
-  Footstep EQ for Warzone - rimozione completa di Equalizer APO.
+  Mod Audio COD - rimozione completa di Equalizer APO.
 
   Cosa fa:
     1. chiede conferma;
@@ -10,7 +10,7 @@
          - rimuove le sue voci dal registro;
     4. elimina anche la cartella config (i preset): rimozione pulita;
     5. controlla che sia tutto rimosso e propone il riavvio.
-  Resta solo la copia di sicurezza in Documenti\Footstep EQ - backup.
+  Resta solo la copia di sicurezza in Documenti\Mod Audio COD - backup.
 
   Parametri (per sviluppatori/test):
     -DryRun   mostra cosa farebbe, senza modificare nulla
@@ -97,9 +97,9 @@ try {
     # --- 3. Backup --------------------------------------------------------------
     Write-Section 'BACKUP'
     if ($DryRun) {
-        Write-Status '>>' "Copierei «$($apo.ConfigPath)» in Documenti\Footstep EQ - backup" 'PROVA' Magenta
+        Write-Status '>>' "Copierei «$($apo.ConfigPath)» in Documenti\Mod Audio COD - backup" 'PROVA' Magenta
     } else {
-        Set-GuideStep 'Salvo i tuoi preset' 'Sto copiando la cartella dei preset in Documenti › «Footstep EQ - backup».' 'Passaggio 2 di 3'
+        Set-GuideStep 'Salvo i tuoi preset' 'Sto copiando la cartella dei preset in Documenti › «Mod Audio COD - backup».' 'Passaggio 2 di 3'
         $bk = Backup-ConfigFolder $apo.ConfigPath
         Write-Status 'OK' 'Copia dei preset' $(if ($bk) { 'SALVATA' } else { 'NESSUN PRESET' })
         if ($bk) { Write-Host "        └─ $bk" -ForegroundColor DarkGray }

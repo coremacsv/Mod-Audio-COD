@@ -3,14 +3,13 @@
 
   Cosa fa:
     1. chiede conferma;
-    2. salva una copia di tutti i preset (cartella config) in Documenti;
-    3. avvia il disinstallatore UFFICIALE di Equalizer APO, che:
+    2. avvia il disinstallatore UFFICIALE di Equalizer APO, che:
          - toglie Equalizer APO da tutte le cuffie e i microfoni,
          - cancella solo i propri file (mai l'intera cartella),
          - rimuove le sue voci dal registro;
-    4. elimina anche la cartella config (i preset): rimozione pulita;
-    5. controlla che sia tutto rimosso e propone il riavvio.
-  Resta solo la copia di sicurezza in Documenti\Mod Audio COD - backup.
+    3. elimina anche la cartella config (i preset): rimozione pulita,
+       non resta niente sul PC;
+    4. controlla che sia tutto rimosso e propone il riavvio.
 
   Parametri (per sviluppatori/test):
     -DryRun   mostra cosa farebbe, senza modificare nulla
@@ -83,10 +82,10 @@ try {
     $ask = "Vuoi rimuovere completamente Equalizer APO?`n`n" +
            "• Verrà tolto da tutte le cuffie e i microfoni ($($devices.Count) dispositivi)`n" +
            "• Smetteranno di funzionare TUTTI gli equalizzatori basati su Equalizer APO (Mod Audio COD, Peace, altri preset)`n" +
-           "• Verranno cancellati anche tutti i preset (prima ne salvo una copia in Documenti)`n`n" +
+           "• Verranno cancellati anche tutti i preset: sul PC non resterà niente`n`n" +
            "L'audio di Windows torna com'era prima. Nessun file del gioco viene toccato."
     if (-not $DryRun -and -not $NoPause) {
-        Set-GuideStep 'Conferma la rimozione' 'Rispondi alla domanda: «Sì» per rimuovere Equalizer APO, «No» per annullare.' 'Passaggio 1 di 3'
+        Set-GuideStep 'Conferma la rimozione' 'Rispondi alla domanda: «Sì» per rimuovere Equalizer APO, «No» per annullare.' 'Passaggio 1 di 2'
         if (-not (Ask-YesNo $ask 'Mod Audio COD - Rimozione')) {
             Close-Guide
             Write-Status '!!' 'Rimozione annullata dall''utente' 'NESSUNA MODIFICA' Yellow
@@ -94,18 +93,7 @@ try {
         }
     }
 
-    # --- 3. Backup --------------------------------------------------------------
-    Write-Section 'BACKUP'
-    if ($DryRun) {
-        Write-Status '>>' "Copierei «$($apo.ConfigPath)» in Documenti\Mod Audio COD - backup" 'PROVA' Magenta
-    } else {
-        Set-GuideStep 'Salvo i tuoi preset' 'Sto copiando la cartella dei preset in Documenti › «Mod Audio COD - backup».' 'Passaggio 2 di 3'
-        $bk = Backup-ConfigFolder $apo.ConfigPath
-        Write-Status 'OK' 'Copia dei preset' $(if ($bk) { 'SALVATA' } else { 'NESSUN PRESET' })
-        if ($bk) { Write-Host "        └─ $bk" -ForegroundColor DarkGray }
-    }
-
-    # --- 4. Disinstallazione ufficiale -----------------------------------------
+    # --- 3. Disinstallazione ufficiale -----------------------------------------
     Write-Section 'RIMOZIONE'
     if (-not $DryRun) { Show-Breach 5 }
     # /S = senza finestre; _?= fa girare il disinstallatore dalla sua cartella
@@ -114,7 +102,7 @@ try {
     if ($DryRun) {
         Write-Status '>>' "Avvierei: $uninst $($uArgs -join ' ')" 'PROVA' Magenta
     } else {
-        Set-GuideStep 'Rimuovo Equalizer APO' "Sto avviando il disinstallatore ufficiale di Equalizer APO.`n`nNon devi fare niente: ci vuole qualche secondo, l'audio potrebbe interrompersi un attimo." 'Passaggio 3 di 3'
+        Set-GuideStep 'Rimuovo Equalizer APO' "Sto avviando il disinstallatore ufficiale di Equalizer APO.`n`nNon devi fare niente: ci vuole qualche secondo, l'audio potrebbe interrompersi un attimo." 'Passaggio 2 di 2'
         $p = Start-Process $uninst -ArgumentList $uArgs -PassThru
         [void](Wait-Until -Condition { $p.HasExited } -Tick { Write-Spin 'Disinstallazione in corso…' })
         Stop-Spin 'Disinstallatore ufficiale' ("CODICE {0}" -f $p.ExitCode) $(if ($p.ExitCode -eq 0) { 'Green' } else { 'Yellow' })
@@ -144,7 +132,7 @@ try {
         }
     }
 
-    # --- 5. Verifica ------------------------------------------------------------
+    # --- 4. Verifica ------------------------------------------------------------
     Write-Section 'VERIFICA'
     if ($DryRun) {
         Write-Status '>>' 'Controllerei che registro e dispositivi siano puliti' 'PROVA' Magenta
@@ -164,7 +152,6 @@ try {
     Write-Type $(if ($DryRun) { '   >>> PROVA COMPLETATA. Nessuna modifica è stata fatta.' } else { '   >>> EQUALIZER APO RIMOSSO. Audio di Windows tornato a quello originale.' }) Red 10
     if (-not $DryRun) { Write-Glitch '█▓▒░  MOD AUDIO ELIMINATO · SISTEMA RIPRISTINATO  ░▒▓█' }
     Write-Host '   Per reinstallare tutto in futuro: «Installa.bat».' -ForegroundColor Gray
-    if ($bk) { Write-Host "   Copia di sicurezza dei preset (puoi cancellarla): $(Split-Path $bk)" -ForegroundColor Gray }
     Write-Host ''
 
     if (-not $DryRun -and -not $NoPause) {

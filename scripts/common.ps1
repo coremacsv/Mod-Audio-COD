@@ -144,15 +144,6 @@ function Remove-ApoRegKey {
     $out = & reg.exe delete 'HKLM\SOFTWARE\EqualizerAPO' /f /reg:64 2>&1
     if ($LASTEXITCODE -ne 0 -or (Test-Path 'HKLM:\SOFTWARE\EqualizerAPO')) { throw "Impossibile cancellare la chiave di registro di Equalizer APO: $out" }
 }
-# Copia l'intera cartella config in Documenti\Mod Audio COD - backup\<data>.
-function Backup-ConfigFolder([string]$ConfigDir, [string]$DestRoot = '') {
-    if (-not (Test-Path $ConfigDir)) { return $null }
-    if (-not $DestRoot) { $DestRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Mod Audio COD - backup' }
-    $dest = Join-Path $DestRoot ('config-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
-    New-Item -ItemType Directory -Force -Path $dest | Out-Null
-    Copy-Item (Join-Path $ConfigDir '*') $dest -Recurse -Force
-    $dest
-}
 
 # Lettura/scrittura di config.txt con condivisione: il servizio audio
 # di Windows puo' tenere il file aperto.

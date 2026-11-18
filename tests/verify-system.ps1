@@ -36,8 +36,6 @@ if ($Expect -eq 'Removed') {
     Check 'Nessuna cartella config rimasta nei percorsi standard' {
         -not (Test-Path (Join-Path $env:ProgramFiles 'EqualizerAPO\config'))
     }
-    $bk = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Mod Audio COD - backup'
-    Check 'Backup dei preset presente in Documenti' { (Test-Path $bk) -and @(Get-ChildItem $bk -Directory).Count -ge 1 }
 } else {
     Check 'Equalizer APO installato' { [bool]$apo }
     if ($apo) {

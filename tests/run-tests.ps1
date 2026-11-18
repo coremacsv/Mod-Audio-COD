@@ -97,12 +97,6 @@ if ($devs.Count -eq 0) {
 }
 
 Write-Host "`n== Rimozione di Equalizer APO (solo prova, nessuna modifica) ==" -ForegroundColor Cyan
-$bkSrc = New-Sandbox "Include: x.txt"
-New-Item -ItemType Directory (Join-Path $bkSrc 'sub') | Out-Null
-[IO.File]::WriteAllText((Join-Path $bkSrc 'sub\preset.txt'), 'ciao')
-$bkRoot = New-Sandbox $null
-$bkDest = Backup-ConfigFolder $bkSrc $bkRoot
-Check 'backup cartella config: copia completa' { (Test-Path (Join-Path $bkDest 'config.txt')) -and (Test-Path (Join-Path $bkDest 'sub\preset.txt')) }
 $fakeDir = New-Sandbox $null
 [IO.File]::WriteAllText((Join-Path $fakeDir 'altro-programma.exe'), 'x')
 Check 'cartella condivisa senza programmi APO: NON installato' { -not (Test-ApoInstallDir $fakeDir) }

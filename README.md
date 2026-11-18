@@ -48,10 +48,12 @@ Ci sono due possibilità:
 
 **`Rimuovi-EqualizerAPO.bat`** in dettaglio:
 1. chiede conferma, perché smetteranno di funzionare *tutti* gli equalizzatori basati su Equalizer APO (anche Peace o altri preset);
-2. salva una copia di tutti i preset in *Documenti → Footstep EQ - backup*;
+2. salva una copia di sicurezza di tutti i preset in *Documenti → Footstep EQ - backup*;
 3. avvia il **disinstallatore ufficiale** di Equalizer APO, che lo toglie da tutte le cuffie e i microfoni e cancella **solo i propri file** (mai l'intera cartella in cui era installato);
-4. chiede se eliminare anche la cartella dei preset (consigliato: **No**);
+4. cancella anche la cartella dei preset e le voci rimaste nel registro: **rimozione pulita**;
 5. controlla che sia tutto rimosso e propone il riavvio.
+
+Sul PC resta solo la copia di sicurezza in Documenti: se non ti serve, cancellala.
 
 Per reinstallare tutto in seguito basta di nuovo `Installa.bat`.
 
@@ -88,6 +90,7 @@ Il preset installato si trova nella cartella `config` di Equalizer APO, con il n
 
 - `scripts/install.ps1` trova Equalizer APO tramite il registro di Windows e individua le uscite audio su cui è attivo. Poi copia `presets/warzone_passi.txt`, limitandolo a quelle uscite (il microfono non viene toccato), e aggiunge una riga `Include:` al `config.txt`. Le altre righe del file restano come sono.
 - Equalizer APO **non è incluso** nel progetto. L'installer scarica la versione 1.4.2 da SourceForge e la avvia **solo se l'impronta SHA-256 del file corrisponde** a quella scritta in `scripts/common.ps1`. In caso contrario non esegue niente e apre la pagina ufficiale.
+- Test: `tests\run-tests.ps1` (test automatici, non modificano il sistema) e `tests\verify-system.ps1 -Expect Installed|Removed` (controlla lo stato reale del PC dopo un'installazione o una rimozione).
 - `Installa.bat` con `-DemoGuide` (`powershell -File scripts\install.ps1 -DemoGuide`) mostra l'anteprima della guida senza modificare nulla.
 
 Gli script sono in chiaro: puoi leggerli prima di eseguirli.

@@ -8,8 +8,9 @@
          - toglie Equalizer APO da tutte le cuffie e i microfoni,
          - cancella solo i propri file (mai l'intera cartella),
          - rimuove le sue voci dal registro;
-    4. se richiesto, elimina anche la cartella config (i preset);
+    4. elimina anche la cartella config (i preset): rimozione pulita;
     5. controlla che sia tutto rimosso e propone il riavvio.
+  Resta solo la copia di sicurezza in Documenti\Footstep EQ - backup.
 
   Parametri (per sviluppatori/test):
     -DryRun   mostra cosa farebbe, senza modificare nulla
@@ -78,8 +79,8 @@ try {
     $ask = "Vuoi rimuovere completamente Equalizer APO?`n`n" +
            "• Verrà tolto da tutte le cuffie e i microfoni ($($devices.Count) dispositivi)`n" +
            "• Smetteranno di funzionare TUTTI gli equalizzatori basati su Equalizer APO (Footstep EQ, Peace, altri preset)`n" +
-           "• Prima viene salvata una copia dei tuoi preset in Documenti`n`n" +
-           "Nessun file del gioco viene toccato."
+           "• Verranno cancellati anche tutti i preset (prima ne salvo una copia in Documenti)`n`n" +
+           "L'audio di Windows torna com'era prima. Nessun file del gioco viene toccato."
     if (-not $DryRun -and -not $NoPause) {
         Set-GuideStep 'Conferma la rimozione' 'Rispondi alla domanda: «Sì» per rimuovere Equalizer APO, «No» per annullare.' 'Passaggio 1 di 3'
         if (-not (Ask-YesNo $ask 'Footstep EQ - Rimozione')) {
@@ -87,11 +88,6 @@ try {
             Write-Status '!!' 'Rimozione annullata dall''utente' 'NESSUNA MODIFICA' Yellow
             Wait-End; exit 0
         }
-        $deleteConfig = Ask-YesNo ("Vuoi eliminare anche i preset salvati (cartella «config»)?`n`n" +
-                                   "• «No» (consigliato): restano sul PC, utili se reinstalli Equalizer APO`n" +
-                                   "• «Sì»: vengono cancellati, ma una copia resta comunque in Documenti") 'Footstep EQ - Rimozione' -DefaultNo
-    } else {
-        $deleteConfig = $false
     }
 
     # --- 3. Backup --------------------------------------------------------------
@@ -120,11 +116,15 @@ try {
 
         # Con _?= il disinstallatore non può cancellare se stesso: lo facciamo noi.
         Remove-Item (Join-Path $apo.InstallPath 'Uninstall.exe') -Force -ErrorAction SilentlyContinue
-        if ($deleteConfig -and (Test-Path $apo.ConfigPath)) {
+        # Rimozione pulita: via anche i preset. Per sicurezza si cancella solo una
+        # cartella che si chiama davvero "config" (mai un percorso diverso).
+        if ((Test-Path $apo.ConfigPath) -and (Split-Path $apo.ConfigPath -Leaf) -eq 'config') {
             Remove-Item $apo.ConfigPath -Recurse -Force -ErrorAction SilentlyContinue
-            Write-Status 'OK' 'Cartella dei preset' 'ELIMINATA'
+        }
+        if (Test-Path $apo.ConfigPath) {
+            Write-Status '!!' 'Cartella dei preset: alcuni file in uso, riprova dopo il riavvio' '' Yellow
         } else {
-            Write-Status 'OK' 'Cartella dei preset' 'CONSERVATA'
+            Write-Status 'OK' 'Cartella dei preset' 'ELIMINATA'
         }
         # Cancella la cartella di installazione SOLO se è rimasta vuota.
         if ((Test-Path $apo.InstallPath) -and -not (Get-ChildItem $apo.InstallPath -Force -ErrorAction SilentlyContinue)) {
@@ -158,6 +158,7 @@ try {
     Write-Host ('   ' + ('═' * ((Get-FxWidth) - 6))) -ForegroundColor DarkGreen
     Write-Type $(if ($DryRun) { '   >>> PROVA COMPLETATA. Nessuna modifica è stata fatta.' } else { '   >>> EQUALIZER APO RIMOSSO. Audio di Windows tornato a quello originale.' }) Cyan 10
     Write-Host '   Per reinstallare tutto in futuro: «Installa.bat».' -ForegroundColor Gray
+    if ($bk) { Write-Host "   Copia di sicurezza dei preset (puoi cancellarla): $(Split-Path $bk)" -ForegroundColor Gray }
     Write-Host ''
 
     if (-not $DryRun -and -not $NoPause) {

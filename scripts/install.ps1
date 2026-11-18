@@ -232,6 +232,9 @@ try {
     $preset = $template.Replace('{{DEVICE_LINE}}', (New-DeviceLine $devices))
     Write-Shared (Join-Path $ConfigDir $script:PresetName) $preset
     Write-Status 'OK' "Preset $($script:PresetName)" 'SCRITTO'
+    if (Disable-ApoSampleConfig $ConfigDir) {
+        Write-Status 'OK' 'Configurazione di esempio di Equalizer APO (bassi +4 dB, -6 dB)' 'DISATTIVATA'
+    }
     Set-IncludeState $ConfigDir 'active'
     Write-Status 'OK' 'Attivazione in config.txt' 'ATTIVO'
     # Avvisa se ci sono altri preset attivi che potrebbero sommarsi a questo.

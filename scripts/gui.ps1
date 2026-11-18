@@ -88,9 +88,10 @@ function Wait-Until([scriptblock]$Condition, [int]$TimeoutSec = 0, [scriptblock]
     $true
 }
 
-function Ask-YesNo([string]$Text, [string]$Caption = 'Footstep EQ') {
+function Ask-YesNo([string]$Text, [string]$Caption = 'Footstep EQ', [switch]$DefaultNo) {
     $owner = if ($script:Guide) { $script:Guide.Form } else { $null }
-    [System.Windows.Forms.MessageBox]::Show($owner, $Text, $Caption, 'YesNo', 'Question') -eq 'Yes'
+    $def = if ($DefaultNo) { 'Button2' } else { 'Button1' }
+    [System.Windows.Forms.MessageBox]::Show($owner, $Text, $Caption, 'YesNo', 'Question', $def) -eq 'Yes'
 }
 
 function Show-Info([string]$Text, [string]$Caption = 'Footstep EQ', [string]$Icon = 'Information') {

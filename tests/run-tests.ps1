@@ -54,6 +54,18 @@ Check 'riga Device nel formato di Equalizer APO' {
     'Device: Realtek(R) Audio Altoparlanti {abc}; USB Cuffie {def}'
 }
 
+Write-Host "`n== Configurazione di esempio di Equalizer APO ==" -ForegroundColor Cyan
+$sample = "Preamp: -6 dB`r`nInclude: example.txt`r`nGraphicEQ: 25 0; 40 0; 63 0; 100 0; 160 0; 250 0; 400 0; 630 0; 1000 0; 1600 0; 2500 0; 4000 0; 6300 0; 10000 0; 16000 0`r`n"
+$s1 = New-Sandbox $sample
+Check 'config di esempio: viene disattivato' { Disable-ApoSampleConfig $s1 }
+Check 'config di esempio: nessuna riga attiva rimasta' { @((Cfg $s1) -split "\r?\n" | Where-Object { $_.Trim() -ne '' -and -not $_.Trim().StartsWith('#') }).Count -eq 0 }
+Check 'config di esempio: righe conservate come commento' { (Cfg $s1) -match '#.*Include: example\.txt' }
+$s2 = New-Sandbox "Preamp: -6 dB`r`nInclude: mio_preset.txt`r`n"
+Check 'config personalizzato con Preamp -6: NON toccato' { -not (Disable-ApoSampleConfig $s2) -and (Cfg $s2) -match '(?m)^Preamp: -6 dB' }
+$s3 = New-Sandbox ($sample + "Include: warzone_passi.txt`r`n")
+Check 'config di esempio + nostro preset: disattiva solo l''esempio' { (Disable-ApoSampleConfig $s3) -and (Get-IncludeState (Cfg $s3)) -eq 'active' }
+Check 'GraphicEQ non piatto: NON toccato' { -not (Disable-ApoSampleConfig (New-Sandbox "GraphicEQ: 25 3; 40 0")) }
+
 Write-Host "`n== Install / toggle / uninstall (sandbox) ==" -ForegroundColor Cyan
 $orig = "# commento utente`r`nInclude: altro_preset.txt`r`nPreamp: -3 dB`r`n"
 $sb = New-Sandbox $orig
@@ -89,6 +101,39 @@ if ($devs.Count -eq 0) {
     Check 'config con fine riga LF: righe conservate' { $c = Cfg $sb3; $c.Contains('Include: a.txt') -and $c.Contains('Include: b.txt') -and (Get-IncludeState $c) -eq 'active' }
     $r = Run 'toggle.ps1' (New-Sandbox "x")
     Check 'toggle senza preset: errore gestito' { $r.Code -eq 1 -and $r.Out -match 'Installa\.bat' }
+}
+
+Write-Host "`n== Rimozione di Equalizer APO (solo prova, nessuna modifica) ==" -ForegroundColor Cyan
+$bkSrc = New-Sandbox "Include: x.txt"
+New-Item -ItemType Directory (Join-Path $bkSrc 'sub') | Out-Null
+[IO.File]::WriteAllText((Join-Path $bkSrc 'sub\preset.txt'), 'ciao')
+$bkRoot = New-Sandbox $null
+$bkDest = Backup-ConfigFolder $bkSrc $bkRoot
+Check 'backup cartella config: copia completa' { (Test-Path (Join-Path $bkDest 'config.txt')) -and (Test-Path (Join-Path $bkDest 'sub\preset.txt')) }
+$fakeDir = New-Sandbox $null
+[IO.File]::WriteAllText((Join-Path $fakeDir 'altro-programma.exe'), 'x')
+Check 'cartella condivisa senza programmi APO: NON installato' { -not (Test-ApoInstallDir $fakeDir) }
+[IO.File]::WriteAllText((Join-Path $fakeDir 'EqualizerAPO.dll'), 'x')
+Check 'solo EqualizerAPO.dll in attesa di riavvio: NON installato' { -not (Test-ApoInstallDir $fakeDir) }
+[IO.File]::WriteAllText((Join-Path $fakeDir 'DeviceSelector.exe'), 'x')
+Check 'con DeviceSelector.exe: installato' { Test-ApoInstallDir $fakeDir }
+Check 'cartella inesistente: NON installato' { -not (Test-ApoInstallDir (Join-Path $fakeDir 'non-esiste')) }
+
+$apoNow = Get-ApoInfo
+if (-not $apoNow -and (Get-ApoLeftovers).RegKey) {
+    $out = & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scripts 'remove-apo.ps1') -DryRun -NoPause -Fast 2>&1 | Out-String
+    Check 'residui (prova): propone di cancellare la chiave rimasta' { $LASTEXITCODE -eq 0 -and $out -match 'Cancellerei la chiave di registro' }
+    Check 'residui (prova): chiave non toccata' { (Get-ApoLeftovers).RegKey }
+}
+if ($apoNow) {
+    $cfgBefore = Read-Shared (Join-Path $apoNow.ConfigPath 'config.txt')
+    $out = & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scripts 'remove-apo.ps1') -DryRun -NoPause -Fast 2>&1 | Out-String
+    Check 'rimozione (prova): esce con codice 0' { $LASTEXITCODE -eq 0 }
+    Check 'rimozione (prova): usa il disinstallatore ufficiale con /S e _?=' { $out -match 'Uninstall\.exe /S _\?=' }
+    Check 'rimozione (prova): Equalizer APO ancora installato' { [bool](Get-ApoInfo) }
+    Check 'rimozione (prova): config non toccato' { (Read-Shared (Join-Path $apoNow.ConfigPath 'config.txt')) -eq $cfgBefore }
+} else {
+    Write-Host '  [SKIP] Equalizer APO non installato: prova di rimozione saltata' -ForegroundColor Yellow
 }
 
 Write-Host "`n== Download verificato (file locale, niente Internet) ==" -ForegroundColor Cyan

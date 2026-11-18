@@ -30,7 +30,7 @@ try {
 
     Say ''
     Say 'Footstep EQ rimosso. Le altre impostazioni di Equalizer APO sono rimaste com''erano.' Green
-    Say 'Per togliere anche Equalizer APO: Impostazioni > App > App installate > Equalizer APO > Disinstalla.'
+    Say 'Per togliere anche Equalizer APO usa "Rimuovi-EqualizerAPO.bat".'
     Wait-End
 } catch {
     Say "ERRORE: $($_.Exception.Message)" Red

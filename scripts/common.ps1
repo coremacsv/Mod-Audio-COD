@@ -40,14 +40,40 @@ function Restart-Elevated([string]$ScriptPath, [string[]]$ExtraArgs = @()) {
     exit
 }
 
+# Log degli errori con i dettagli tecnici (utile per segnalare problemi).
+function Get-LogPath { Join-Path $env:TEMP 'footstep-eq.log' }
+function Write-ErrorLog($ErrorRecord, [string]$Source) {
+    try {
+        $admin = try { Test-Admin } catch { 'sconosciuto' }
+        $text = @(
+            "==== $(Get-Date -Format 's') [$Source] admin=$admin ps=$($PSVersionTable.PSVersion) os=$([Environment]::OSVersion.VersionString)"
+            "Messaggio: $($ErrorRecord.Exception.Message)"
+            "Tipo: $($ErrorRecord.Exception.GetType().FullName)"
+            "Comando: $($ErrorRecord.InvocationInfo.Line.Trim())"
+            "Posizione: $($ErrorRecord.InvocationInfo.PositionMessage)"
+            "Stack: $($ErrorRecord.ScriptStackTrace)"
+            ''
+        ) -join "`r`n"
+        Add-Content -Path (Get-LogPath) -Value $text -Encoding UTF8
+    } catch {}
+}
+
 function Wait-End {
     if (-not $script:NoPause) { [void](Read-Host "`nPremi INVIO per chiudere") }
+}
+
+# True se nella cartella ci sono davvero i programmi di Equalizer APO.
+# (Non basta che la cartella esista: puo' essere condivisa con altri
+#  programmi, e dopo la disinstallazione resta li'.)
+function Test-ApoInstallDir([string]$Path) {
+    if (-not $Path -or -not (Test-Path $Path)) { return $false }
+    [bool](@('DeviceSelector.exe', 'Configurator.exe', 'Editor.exe') | Where-Object { Test-Path (Join-Path $Path $_) })
 }
 
 # Restituisce cartella di installazione e cartella config di Equalizer APO, oppure $null.
 function Get-ApoInfo {
     $k = Get-ItemProperty 'HKLM:\SOFTWARE\EqualizerAPO' -ErrorAction SilentlyContinue
-    if (-not $k -or -not $k.InstallPath -or -not (Test-Path $k.InstallPath)) { return $null }
+    if (-not $k -or -not (Test-ApoInstallDir $k.InstallPath)) { return $null }
     $cfg = if ($k.ConfigPath) { $k.ConfigPath } else { Join-Path $k.InstallPath 'config' }
     [pscustomobject]@{ InstallPath = $k.InstallPath; ConfigPath = $cfg }
 }
@@ -68,6 +94,64 @@ function Get-ApoPlaybackDevices {
             Device     = $p.'{b3f8fa53-0004-438e-9003-51a46e139bfc},6'
         }
     }
+}
+
+# Tutti i dispositivi (uscite e microfoni) su cui Equalizer APO e' attivo.
+function Get-ApoAllDevices {
+    foreach ($flow in 'Render', 'Capture') {
+        $base = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\$flow"
+        Get-ChildItem $base -ErrorAction SilentlyContinue | ForEach-Object {
+            $fx = Get-ItemProperty "$($_.PSPath)\FxProperties" -ErrorAction SilentlyContinue
+            if (-not $fx) { return }
+            $values = ($fx.PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object { $_.Value }) | Out-String
+            if ($values -notmatch $script:ApoClsid) { return }
+            $p = Get-ItemProperty "$($_.PSPath)\Properties" -ErrorAction SilentlyContinue
+            [pscustomobject]@{
+                Flow       = $flow
+                Guid       = $_.PSChildName
+                Connection = $p.'{a45c254e-df1c-4efd-8020-67d146a850e0},2'
+                Device     = $p.'{b3f8fa53-0004-438e-9003-51a46e139bfc},6'
+            }
+        }
+    }
+}
+
+# Percorso del disinstallatore ufficiale di Equalizer APO, oppure $null.
+function Get-ApoUninstaller([string]$InstallPath) {
+    $u = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\EqualizerAPO' -ErrorAction SilentlyContinue
+    $cands = @()
+    if ($u -and $u.UninstallString) { $cands += $u.UninstallString.Trim('"') }
+    if ($InstallPath) { $cands += (Join-Path $InstallPath 'Uninstall.exe') }
+    $cands | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+}
+
+# Residui che il disinstallatore ufficiale puo' lasciare.
+function Get-ApoLeftovers {
+    $r = [ordered]@{
+        RegKey     = Test-Path 'HKLM:\SOFTWARE\EqualizerAPO'
+        UninstKey  = Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\EqualizerAPO'
+        Clsid      = Test-Path "Registry::HKEY_CLASSES_ROOT\CLSID\{$($script:ApoClsid)}"
+        PendingDll = $false
+    }
+    $k = Get-ItemProperty 'HKLM:\SOFTWARE\EqualizerAPO' -ErrorAction SilentlyContinue
+    if ($k -and $k.InstallPath) { $r.PendingDll = Test-Path (Join-Path $k.InstallPath 'EqualizerAPO.dll') }
+    [pscustomobject]$r
+}
+
+# Cancella HKLM\SOFTWARE\EqualizerAPO. Si usa reg.exe perche' Remove-Item di
+# PowerShell su questa chiave viene rifiutato anche con i permessi di amministratore.
+function Remove-ApoRegKey {
+    $out = & reg.exe delete 'HKLM\SOFTWARE\EqualizerAPO' /f /reg:64 2>&1
+    if ($LASTEXITCODE -ne 0 -or (Test-Path 'HKLM:\SOFTWARE\EqualizerAPO')) { throw "Impossibile cancellare la chiave di registro di Equalizer APO: $out" }
+}
+# Copia l'intera cartella config in Documenti\Footstep EQ - backup\<data>.
+function Backup-ConfigFolder([string]$ConfigDir, [string]$DestRoot = '') {
+    if (-not (Test-Path $ConfigDir)) { return $null }
+    if (-not $DestRoot) { $DestRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Footstep EQ - backup' }
+    $dest = Join-Path $DestRoot ('config-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+    New-Item -ItemType Directory -Force -Path $dest | Out-Null
+    Copy-Item (Join-Path $ConfigDir '*') $dest -Recurse -Force
+    $dest
 }
 
 # Lettura/scrittura di config.txt con condivisione: il servizio audio
@@ -131,6 +215,31 @@ function Backup-Config([string]$ConfigDir) {
     # Tiene solo gli ultimi 10 backup.
     Get-ChildItem $dir -Filter 'config.*.txt' | Sort-Object Name -Descending | Select-Object -Skip 10 | Remove-Item -Force -ErrorAction SilentlyContinue
     $dest
+}
+
+# Equalizer APO appena installato scrive in config.txt una configurazione
+# di esempio (Preamp -6 dB + example.txt con +4 dB di bassi + GraphicEQ piatto)
+# che si sommerebbe al nostro preset. Se il config contiene SOLO quella
+# configurazione di esempio, la commenta. Restituisce $true se l'ha fatto.
+function Test-ApoSampleLine([string]$Line) {
+    $l = $Line.Trim()
+    ($l -match '^Preamp:\s*-6(\.0+)?\s*dB$') -or
+    ($l -match '^Include:\s*example\.txt$') -or
+    ($l -match '^GraphicEQ:\s*(\d+\s+0(\.0+)?\s*;\s*)*\d+\s+0(\.0+)?\s*;?$')
+}
+function Disable-ApoSampleConfig([string]$ConfigDir) {
+    $cfg = Join-Path $ConfigDir 'config.txt'
+    if (-not (Test-Path $cfg)) { return $false }
+    $lines  = @((Read-Shared $cfg) -split "\r?\n")
+    $ours   = "^\s*#?\s*$([regex]::Escape($script:IncludeLine))\s*$"
+    $active = @($lines | Where-Object { $_.Trim() -ne '' -and -not $_.Trim().StartsWith('#') -and $_ -notmatch $ours })
+    if ($active.Count -eq 0) { return $false }
+    if (@($active | Where-Object { -not (Test-ApoSampleLine $_) }).Count -gt 0) { return $false }   # config personalizzato: non si tocca
+    $new = $lines | ForEach-Object {
+        if ($_.Trim() -ne '' -and -not $_.Trim().StartsWith('#') -and (Test-ApoSampleLine $_)) { "# [esempio di Equalizer APO, disattivato da Footstep EQ] $($_.Trim())" } else { $_ }
+    }
+    Write-Shared $cfg (($new -join "`r`n").TrimEnd() + "`r`n")
+    $true
 }
 
 # Stato della riga Include nel config: 'active', 'disabled' o 'missing'.

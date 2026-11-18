@@ -39,9 +39,21 @@ Doppio clic su **`Attiva-Disattiva.bat`**. L'effetto è immediato, anche a gioco
 
 ## Disinstallare
 
-Doppio clic su **`Disinstalla.bat`**: rimuove il preset e lascia com'erano le altre impostazioni di Equalizer APO. Prima di ogni modifica viene salvata una copia della configurazione nella cartella `config\footstep-eq-backup` di Equalizer APO.
+Ci sono due possibilità:
 
-Per togliere anche Equalizer APO: *Impostazioni → App → App installate → Equalizer APO → Disinstalla*.
+| File | Cosa fa |
+|---|---|
+| **`Disinstalla-solo-preset.bat`** | Toglie solo il preset dei passi. Equalizer APO e gli altri preset restano come sono. |
+| **`Rimuovi-EqualizerAPO.bat`** | Rimuove **completamente Equalizer APO** e riporta l'audio di Windows com'era prima. |
+
+**`Rimuovi-EqualizerAPO.bat`** in dettaglio:
+1. chiede conferma, perché smetteranno di funzionare *tutti* gli equalizzatori basati su Equalizer APO (anche Peace o altri preset);
+2. salva una copia di tutti i preset in *Documenti → Footstep EQ - backup*;
+3. avvia il **disinstallatore ufficiale** di Equalizer APO, che lo toglie da tutte le cuffie e i microfoni e cancella **solo i propri file** (mai l'intera cartella in cui era installato);
+4. chiede se eliminare anche la cartella dei preset (consigliato: **No**);
+5. controlla che sia tutto rimosso e propone il riavvio.
+
+Per reinstallare tutto in seguito basta di nuovo `Installa.bat`.
 
 ## Impostazioni consigliate nel gioco
 
@@ -84,7 +96,7 @@ Gli script sono in chiaro: puoi leggerli prima di eseguirli.
 
 ## English (short)
 
-One-click installer for an **Equalizer APO** preset that makes footsteps clearer in Call of Duty: Warzone. It doesn't touch any game files. Download the ZIP, run `Installa.bat`, and follow the on-screen steps. Use `Attiva-Disattiva.bat` to toggle the preset and `Disinstalla.bat` to remove it. Not affiliated with Activision.
+One-click installer for an **Equalizer APO** preset that makes footsteps clearer in Call of Duty: Warzone. It doesn't touch any game files. Download the ZIP, run `Installa.bat`, and follow the on-screen steps. Use `Attiva-Disattiva.bat` to toggle the preset `Disinstalla-solo-preset.bat` to remove only the preset, and `Rimuovi-EqualizerAPO.bat` to fully uninstall Equalizer APO (presets are backed up to Documents first). Not affiliated with Activision.
 
 ## Licenza
 

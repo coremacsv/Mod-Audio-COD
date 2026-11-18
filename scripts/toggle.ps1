@@ -25,10 +25,10 @@ try {
     $state = Get-IncludeState (Read-Shared (Join-Path $ConfigDir 'config.txt'))
     if ($state -eq 'active') {
         Set-IncludeState $ConfigDir 'disabled'
-        Say ''; Say '  Footstep EQ: SPENTO' Yellow
+        Say ''; Say '  Mod Audio COD: SPENTO' Yellow
     } else {
         Set-IncludeState $ConfigDir 'active'
-        Say ''; Say '  Footstep EQ: ACCESO' Green
+        Say ''; Say '  Mod Audio COD: ACCESO' Green
     }
     if ($NoPause) { return }
     Start-Sleep -Seconds 3

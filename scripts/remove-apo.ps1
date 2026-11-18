@@ -30,16 +30,20 @@ $script:NoPause = $NoPause
 $script:FxFast  = [bool]$Fast
 
 if (-not $DryRun -and -not (Test-Admin)) {
-    Initialize-Fx 'FOOTSTEP//EQ  ::  rimozione'
-    Show-Banner
+    Set-FxTheme attack
+    Initialize-Fx 'MOD AUDIO COD  ::  DISINSTALLER'
+    Show-Banner -Subtitle 'D I S I N S T A L L E R   M O D   A U D I O' -Tagline 'rimozione completa di Equalizer APO  ·  effetti scenici, nessun attacco reale  ·  open source'
     Write-Status '!!' 'Servono i permessi di amministratore' 'PREMI «SÌ»' Yellow
     Start-FxSleep 900
     Restart-Elevated $PSCommandPath
 }
 
 try {
-    Initialize-Fx 'FOOTSTEP//EQ  ::  rimozione'
-    Show-Matrix; Show-Banner
+    Set-FxTheme attack
+    Initialize-Fx 'MOD AUDIO COD  ::  DISINSTALLER'
+    Show-Matrix; Show-Banner -Subtitle 'D I S I N S T A L L E R   M O D   A U D I O' -Tagline 'rimozione completa di Equalizer APO  ·  effetti scenici, nessun attacco reale  ·  open source'
+    Write-Glitch '>>> SEQUENZA DI DISINSTALLAZIONE AVVIATA <<<'
+    Show-Breach 7
     if ($DryRun) { Write-Status '!!' 'MODALITÀ PROVA: nessuna modifica verrà fatta' 'DRY-RUN' Magenta }
 
     # --- 1. Ricognizione -------------------------------------------------------
@@ -78,12 +82,12 @@ try {
     # --- 2. Conferma ------------------------------------------------------------
     $ask = "Vuoi rimuovere completamente Equalizer APO?`n`n" +
            "• Verrà tolto da tutte le cuffie e i microfoni ($($devices.Count) dispositivi)`n" +
-           "• Smetteranno di funzionare TUTTI gli equalizzatori basati su Equalizer APO (Footstep EQ, Peace, altri preset)`n" +
+           "• Smetteranno di funzionare TUTTI gli equalizzatori basati su Equalizer APO (Mod Audio COD, Peace, altri preset)`n" +
            "• Verranno cancellati anche tutti i preset (prima ne salvo una copia in Documenti)`n`n" +
            "L'audio di Windows torna com'era prima. Nessun file del gioco viene toccato."
     if (-not $DryRun -and -not $NoPause) {
         Set-GuideStep 'Conferma la rimozione' 'Rispondi alla domanda: «Sì» per rimuovere Equalizer APO, «No» per annullare.' 'Passaggio 1 di 3'
-        if (-not (Ask-YesNo $ask 'Footstep EQ - Rimozione')) {
+        if (-not (Ask-YesNo $ask 'Mod Audio COD - Rimozione')) {
             Close-Guide
             Write-Status '!!' 'Rimozione annullata dall''utente' 'NESSUNA MODIFICA' Yellow
             Wait-End; exit 0
@@ -103,6 +107,7 @@ try {
 
     # --- 4. Disinstallazione ufficiale -----------------------------------------
     Write-Section 'RIMOZIONE'
+    if (-not $DryRun) { Show-Breach 5 }
     # /S = senza finestre; _?= fa girare il disinstallatore dalla sua cartella
     # e permette di aspettarne la fine (altrimenti si copia in TEMP e termina subito).
     $uArgs = @('/S', "_?=$($apo.InstallPath)")
@@ -156,7 +161,8 @@ try {
 
     Write-Host ''
     Write-Host ('   ' + ('═' * ((Get-FxWidth) - 6))) -ForegroundColor DarkGreen
-    Write-Type $(if ($DryRun) { '   >>> PROVA COMPLETATA. Nessuna modifica è stata fatta.' } else { '   >>> EQUALIZER APO RIMOSSO. Audio di Windows tornato a quello originale.' }) Cyan 10
+    Write-Type $(if ($DryRun) { '   >>> PROVA COMPLETATA. Nessuna modifica è stata fatta.' } else { '   >>> EQUALIZER APO RIMOSSO. Audio di Windows tornato a quello originale.' }) Red 10
+    if (-not $DryRun) { Write-Glitch '█▓▒░  MOD AUDIO ELIMINATO · SISTEMA RIPRISTINATO  ░▒▓█' }
     Write-Host '   Per reinstallare tutto in futuro: «Installa.bat».' -ForegroundColor Gray
     if ($bk) { Write-Host "   Copia di sicurezza dei preset (puoi cancellarla): $(Split-Path $bk)" -ForegroundColor Gray }
     Write-Host ''
@@ -165,7 +171,7 @@ try {
         if (Ask-YesNo ("✅ Equalizer APO è stato rimosso.`n`nPer completare la pulizia serve un riavvio.`n" +
                        "Salva il tuo lavoro: vuoi riavviare adesso? (il PC si riavvia tra 15 secondi)")) {
             Write-Status '!!' 'Riavvio del PC' 'TRA 15 SECONDI' Yellow
-            shutdown.exe /r /t 15 /c "Footstep EQ: riavvio per completare la rimozione di Equalizer APO"
+            shutdown.exe /r /t 15 /c "Mod Audio COD: riavvio per completare la rimozione di Equalizer APO"
         } else {
             Write-Status '!!' 'Ricordati di riavviare il PC' '' Yellow
         }
@@ -177,7 +183,7 @@ try {
     Write-Host ''
     Write-Status 'ERR' $_.Exception.Message '' Red
     Write-Host "        └─ dettagli tecnici: $(Get-LogPath)" -ForegroundColor DarkGray
-    if (-not $NoPause) { Show-Info "Qualcosa è andato storto:`n$($_.Exception.Message)" 'Footstep EQ' 'Error' }
+    if (-not $NoPause) { Show-Info "Qualcosa è andato storto:`n$($_.Exception.Message)" 'Mod Audio COD' 'Error' }
     Wait-End
     exit 1
 }

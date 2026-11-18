@@ -69,7 +69,7 @@ function Write-Devices($Devices) {
 #  Anteprima (nessuna modifica al sistema)
 # ---------------------------------------------------------------------------
 if ($DemoGuide) {
-    Initialize-Fx 'FOOTSTEP//EQ  ::  anteprima'
+    Initialize-Fx 'MOD AUDIO COD  ::  anteprima'
     Show-Matrix; Show-Banner
     Write-Section 'RICOGNIZIONE'
     Set-GuideStep $T.Check[0] $T.Check[1] 'Anteprima 1 di 6'
@@ -104,7 +104,7 @@ if ($DemoGuide) {
 #  Permessi di amministratore
 # ---------------------------------------------------------------------------
 if (-not $ConfigDir -and -not (Test-Admin)) {
-    Initialize-Fx 'FOOTSTEP//EQ'
+    Initialize-Fx 'MOD AUDIO COD'
     Show-Banner
     Write-Status '!!' 'Servono i permessi di amministratore' 'PREMI «SÌ»' Yellow
     Start-FxSleep 900
@@ -116,7 +116,7 @@ if (-not $ConfigDir -and -not (Test-Admin)) {
 # ---------------------------------------------------------------------------
 $needReboot = $false
 try {
-    Initialize-Fx 'FOOTSTEP//EQ  ::  audio override toolkit'
+    Initialize-Fx 'MOD AUDIO COD  ::  audio override toolkit'
     Show-Matrix; Show-Banner
     Set-GuideStep $T.Check[0] $T.Check[1] (Step 1)
 
@@ -166,7 +166,7 @@ try {
                 Close-Guide
                 Show-Info ("Non riesco a scaricare Equalizer APO in automatico.`n`n" +
                            "Ti apro la pagina ufficiale: scaricalo e installalo, spunta le tue cuffie nel Device Selector, " +
-                           "riavvia il PC ed esegui di nuovo Installa.bat.") 'Footstep EQ' 'Warning'
+                           "riavvia il PC ed esegui di nuovo Installa.bat.") 'Mod Audio COD' 'Warning'
                 Start-Process $script:ApoDownload
                 exit 1
             }
@@ -258,7 +258,7 @@ try {
         if (Ask-YesNo ("✅ Fatto! Il preset è installato.`n`nPer attivare Equalizer APO serve un riavvio.`n" +
                        "Salva il tuo lavoro: vuoi riavviare adesso? (il PC si riavvia tra 15 secondi)`n`n$tips")) {
             Write-Status '!!' 'Riavvio del PC' 'TRA 15 SECONDI' Yellow
-            shutdown.exe /r /t 15 /c "Footstep EQ: riavvio per attivare Equalizer APO"
+            shutdown.exe /r /t 15 /c "Mod Audio COD: riavvio per attivare Equalizer APO"
         } else {
             Write-Status '!!' 'Ricordati di riavviare il PC prima di giocare' '' Yellow
         }
@@ -271,7 +271,7 @@ try {
     Write-Host ''
     Write-Status 'ERR' $_.Exception.Message '' Red
     $msg = "Qualcosa è andato storto:`n$($_.Exception.Message)`n`nNessun file del gioco è stato toccato."
-    if (-not $NoPause) { Show-Info $msg 'Footstep EQ' 'Error' }
+    if (-not $NoPause) { Show-Info $msg 'Mod Audio COD' 'Error' }
     Wait-End
     exit 1
 }

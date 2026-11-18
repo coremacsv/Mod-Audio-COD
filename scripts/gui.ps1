@@ -12,7 +12,7 @@ $script:Guide = $null
 function Show-Guide {
     if ($script:Guide) { return }
     $f = New-Object System.Windows.Forms.Form
-    $f.Text            = 'Footstep EQ - Guida'
+    $f.Text            = 'Mod Audio COD by Lozy - Guida'
     $f.Size            = New-Object System.Drawing.Size(460, 300)
     $f.FormBorderStyle = 'FixedToolWindow'
     $f.TopMost         = $true
@@ -88,13 +88,13 @@ function Wait-Until([scriptblock]$Condition, [int]$TimeoutSec = 0, [scriptblock]
     $true
 }
 
-function Ask-YesNo([string]$Text, [string]$Caption = 'Footstep EQ', [switch]$DefaultNo) {
+function Ask-YesNo([string]$Text, [string]$Caption = 'Mod Audio COD', [switch]$DefaultNo) {
     $owner = if ($script:Guide) { $script:Guide.Form } else { $null }
     $def = if ($DefaultNo) { 'Button2' } else { 'Button1' }
     [System.Windows.Forms.MessageBox]::Show($owner, $Text, $Caption, 'YesNo', 'Question', $def) -eq 'Yes'
 }
 
-function Show-Info([string]$Text, [string]$Caption = 'Footstep EQ', [string]$Icon = 'Information') {
+function Show-Info([string]$Text, [string]$Caption = 'Mod Audio COD', [string]$Icon = 'Information') {
     $owner = if ($script:Guide) { $script:Guide.Form } else { $null }
     [void][System.Windows.Forms.MessageBox]::Show($owner, $Text, $Caption, 'OK', $Icon)
 }

@@ -29,7 +29,7 @@ try {
     if (Test-Path $preset) { Remove-Item $preset -Force }
 
     Say ''
-    Say 'Footstep EQ rimosso. Le altre impostazioni di Equalizer APO sono rimaste com''erano.' Green
+    Say 'Preset di Mod Audio COD rimosso. Le altre impostazioni di Equalizer APO sono rimaste com''erano.' Green
     Say 'Per togliere anche Equalizer APO usa "Rimuovi-EqualizerAPO.bat".'
     Wait-End
 } catch {

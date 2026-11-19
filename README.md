@@ -6,7 +6,7 @@ Senti meglio i **passi** dei nemici su Call of Duty: Warzone, con un clic.
 
 Questo progetto installa un preset di equalizzazione per **[Equalizer APO](https://sourceforge.net/projects/equalizerapo/)** (gratuito e open source). Il preset abbassa i bassi che coprono tutto (esplosioni, veicoli, killstreak) e alza le frequenze dei passi, delle ricariche e dei cambi arma.
 
-> ✅ **Non modifica nessun file del gioco.** Lavora sull'audio di Windows, come un normale equalizzatore. Nessun rischio per l'anti-cheat.
+> ✅ **Non modifica nessun file del gioco.** Lavora sull'audio di Windows, come un normale equalizzatore, e cambia solo le **impostazioni audio** di Warzone (le stesse del menu Audio). Nessun rischio per l'anti-cheat.
 >
 > ⚠️ Progetto non ufficiale e **non affiliato con Activision**. "Call of Duty" e "Warzone" sono marchi dei rispettivi proprietari.
 
@@ -29,7 +29,10 @@ Questo progetto installa un preset di equalizzazione per **[Equalizer APO](https
 3. In basso a destra compare una **finestra-guida** che ti dice cosa cliccare a ogni passaggio e si aggiorna da sola:
    - se **Equalizer APO non è installato**, lo scarica dalla pagina ufficiale, controlla che il file sia quello originale e ne avvia l'installazione;
    - quando si apre il **Device Selector**, ti dice di spuntare **solo l'uscita delle tue cuffie**;
-   - alla fine installa il preset e, se serve, ti propone il **riavvio**.
+   - installa il preset e **imposta da solo l'audio di Warzone** (vedi sotto), poi mostra una schermata con l'esito di ogni voce;
+   - alla fine, se serve, ti propone il **riavvio**.
+
+**Tieni Warzone chiuso durante l'installazione**: se è aperto, il programma ti chiede di chiuderlo, altrimenti il gioco sovrascriverebbe le impostazioni alla chiusura.
 
 Se Equalizer APO era già installato e attivo sulle cuffie, il preset funziona subito, senza riavviare.
 
@@ -45,14 +48,35 @@ In dettaglio:
 
 Per reinstallare tutto in seguito basta di nuovo `Installa.bat`.
 
-## Impostazioni consigliate nel gioco
+## Impostazioni audio di Warzone (importante)
 
-| Impostazione | Valore |
-|---|---|
-| Volume musica | 0 |
-| Volume effetti | Massimo |
-| Audio Mix | Cuffie |
-| Audio mono | Disattivato |
+Il preset è pensato per queste impostazioni del gioco. Con valori diversi, soprattutto con la **Compensazione udito asimmetrico** attiva, l'audio può sembrare **tappato**.
+
+`Installa.bat` le **imposta e verifica da solo** nei file delle impostazioni del gioco (`%LOCALAPPDATA%\Activision\Call of Duty\players`, le stesse del menu Audio). Poi mostra una schermata riepilogativa: ✓ impostata, ✗ da cambiare a mano, ⚠ da controllare a mano.
+
+| Sezione | Impostazione | Valore | |
+|---|---|---|---|
+| Volumi | Volume di gioco generale | 80 | automatico |
+| Volumi | Volume musica in gioco | 0 | automatico |
+| Volumi | Volume dialoghi | 50 | automatico |
+| Volumi | Volume effetti | 100 | automatico |
+| Volumi | Volume musica filmati | 0 | automatico |
+| Dispositivo audio | Dispositivo suoni del gioco | Dispositivo sistema predefinito | automatico |
+| Dispositivo audio | Uscita altoparlanti | Stereo | automatico |
+| Dispositivo audio | Modalità cuffie migliorata | No | automatico |
+| Globale | Mix audio | Cuffie | automatico |
+| Globale | Audio mono | No | automatico |
+| Globale | Disattiva audio quando ridotto a icona | No | automatico |
+| Globale | Disattiva musica su licenza | No | automatico |
+| Globale | **Compensazione udito asimmetrico** | **No** | ⚠ **controllala sempre** nel gioco (se è attiva la schermata la segnala in rosso) |
+| Funzionalità | Riduci audio acufene | No | automatico |
+| Funzionalità | Avvisi per colpi alla testa e uccisioni | Sì | ⚠ a mano |
+
+La **Compensazione udito asimmetrico** non è nei file di testo ma in un file binario del profilo: il programma la **legge** (senza mai modificare quel file): se è attiva la segnala in **rosso**. In ogni caso ti chiede **sempre** di controllarla nel gioco, perché un aggiornamento di Warzone potrebbe cambiare il modo in cui viene salvata.
+
+Nel gioco i quattro volumi (musica in gioco, dialoghi, effetti, musica filmati) si vedono solo dopo aver cliccato **Mostra di più** sotto *Volume di gioco generale*.
+
+Gli "Avvisi per colpi alla testa e uccisioni" non influiscono sul preset: controllali a mano se vuoi la configurazione identica. Una volta ogni tanto conviene dare un'occhiata alle impostazioni, perché Warzone può riprendere i valori salvati online.
 
 Se usi l'audio 3D o spaziale del gioco, **disattiva Windows Sonic e Dolby Atmos** in Windows. Due elaborazioni spaziali insieme rendono il suono confuso.
 

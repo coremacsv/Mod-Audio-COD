@@ -17,17 +17,22 @@
     -DemoGuide             anteprima di console e guida, senza modificare nulla
     -Fast                  niente animazioni
     -NoPause               nessuna finestra/attesa finale
+    -CodPlayersDir <dir>   cartella delle impostazioni di Warzone (test)
+    -SkipCod               non toccare le impostazioni di Warzone
 #>
 param(
     [string]$ConfigDir,
     [switch]$DemoGuide,
     [switch]$Fast,
-    [switch]$NoPause
+    [switch]$NoPause,
+    [string]$CodPlayersDir,
+    [switch]$SkipCod
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
 . (Join-Path $PSScriptRoot 'fx.ps1')
 . (Join-Path $PSScriptRoot 'gui.ps1')
+. (Join-Path $PSScriptRoot 'cod-settings.ps1')
 $script:NoPause = $NoPause
 $script:FxFast  = [bool]$Fast
 
@@ -244,15 +249,48 @@ try {
     Show-EqCurve $preset
     Close-Guide
 
+    # --- Impostazioni audio di Warzone ----------------------------------------
+    if (-not $SkipCod) {
+        Write-Section 'IMPOSTAZIONI DI WARZONE'
+        $codDir = if ($CodPlayersDir) { $CodPlayersDir } else { $script:CodDefaultPlayersDir }
+        $codFiles = Find-CodSettingsFiles $codDir
+        $codMode = 'applied'
+        if (-not $codFiles) {
+            Write-Status '!!' 'File delle impostazioni di Warzone' 'NON TROVATI' Yellow
+            $codMode = 'manual'
+        } elseif (-not $CodPlayersDir) {
+            # Warzone aperto: salverebbe sopra le modifiche alla chiusura.
+            while (Test-CodRunning) {
+                Write-Status '!!' 'Warzone è aperto: chiudilo per applicare le impostazioni' 'IN ATTESA' Yellow
+                if ($NoPause) { $codMode = 'running'; break }
+                $ans = [Windows.Forms.MessageBox]::Show(
+                    "Warzone è aperto.`n`nChiudi il gioco e premi «Riprova» per applicare in automatico le impostazioni audio.`n«Annulla» per impostarle a mano.",
+                    'Mod Audio COD', 'RetryCancel', 'Warning')
+                if ($ans -ne 'Retry') { $codMode = 'running'; break }
+            }
+        }
+        $codRows = @(Invoke-CodAudioSetup -PlayersDir $codDir -CheckOnly:($codMode -ne 'applied'))
+        if ($codFiles) { Write-Status '>>' "Profili di Warzone trovati ($($codFiles.Version))" ("{0}" -f (1 + $codFiles.Profiles.Count)) }
+        foreach ($r in $codRows) {
+            switch ($r.Status) {
+                'OK'      { Write-Status 'OK' "$($r.Label): $($r.Show)" $(if ($codMode -eq 'applied') { 'IMPOSTATO' } else { 'GIÀ OK' }) }
+                'VERIFIED' { Write-Status '!!' "$($r.Label): $($r.Show)" 'RISULTA NO · CONTROLLA' Yellow }
+                'MANUAL'  { Write-Status '!!' "$($r.Label): $($r.Show)" 'CONTROLLA A MANO' Yellow }
+                default   { Write-Status 'ERR' "$($r.Label): $($r.Show)" 'DA FARE A MANO' Red }
+            }
+        }
+        if (-not $NoPause) { Show-CodSettingsCard $codRows $codMode }
+    }
+
     # --- 4. Fine -------------------------------------------------------------
     Write-Host ''
     Write-Host ('   ' + ('═' * ((Get-FxWidth) - 6))) -ForegroundColor DarkGreen
     Write-Type '   >>> OVERRIDE AUDIO COMPLETATO' Cyan 12
-    Write-Host '   Nel gioco: Musica 0 · Effetti al massimo · Audio Mix «Cuffie»' -ForegroundColor Gray
+    Write-Host '   In Warzone controlla «Compensazione udito asimmetrico»: deve essere No.' -ForegroundColor Gray
     Write-Host '   Per togliere tutto in futuro: «Rimuovi-EqualizerAPO.bat».' -ForegroundColor Gray
     Write-Host ''
 
-    $tips = "Consigli nel gioco (Impostazioni › Audio):`n• Musica: 0`n• Effetti: al massimo`n• Audio Mix: Cuffie`n`n" +
+    $tips = "In Warzone (Impostazioni › Audio) controlla che «Compensazione udito asimmetrico» sia No.`n`n" +
             "Per togliere tutto in futuro usa «Rimuovi-EqualizerAPO.bat»."
     if ($needReboot -and -not $NoPause) {
         if (Ask-YesNo ("✅ Fatto! Il preset è installato.`n`nPer attivare Equalizer APO serve un riavvio.`n" +

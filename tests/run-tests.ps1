@@ -26,8 +26,13 @@ function New-Sandbox([string]$ConfigText) {
     if ($null -ne $ConfigText) { [IO.File]::WriteAllText((Join-Path $d 'config.txt'), $ConfigText) }
     $d
 }
+# I test non toccano MAI le vere impostazioni di Warzone: l'installer lavora
+# su una cartella finta, vuota (= "file del gioco non trovati"), e la variabile
+# MODAUDIOCOD_TEST blocca comunque ogni scrittura sui file veri.
+$env:MODAUDIOCOD_TEST = '1'
+$script:FakeCodDir = Join-Path $env:TEMP ('fseq-test-cod-' + [guid]::NewGuid().ToString('N'))
 function Run([string]$Script, [string]$Dir) {
-    $out = & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scripts $Script) -ConfigDir $Dir -NoPause -Fast 2>&1 | Out-String
+    $out = & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scripts $Script) -ConfigDir $Dir -NoPause -Fast -CodPlayersDir $script:FakeCodDir 2>&1 | Out-String
     [pscustomobject]@{ Code = $LASTEXITCODE; Out = $out }
 }
 function Cfg([string]$Dir) { [IO.File]::ReadAllText((Join-Path $Dir 'config.txt')) }
@@ -136,6 +141,77 @@ $d3 = Join-Path (New-Sandbox $null) 'nohash.exe'
 Check 'hash vuoto: niente download' { -not (Save-VerifiedFile $uri $d3 '' 200) -and -not (Test-Path $d3) }
 $d4 = Join-Path (New-Sandbox $null) 'missing.exe'
 Check 'URL inesistente: gestito' { -not (Save-VerifiedFile (([Uri](Join-Path $env:TEMP 'non-esiste-xyz.exe')).AbsoluteUri) $d4 $goodHash 200) }
+
+Write-Host "`n== Impostazioni audio di Warzone (file finti) ==" -ForegroundColor Cyan
+. (Join-Path $scripts 'cod-settings.ps1')
+function New-FakeCod {
+    $d = Join-Path $env:TEMP ('fseq-test-cod-' + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path (Join-Path $d '123') | Out-Null
+    $sys = "// Audio`nEffectsVolume@0;1;2 = 0.300000 // 0.000000 to 1.000000`nMusicVolume@0;1;2 = 1.000000 // 0.000000 to 1.000000`n" +
+           "VoiceVolume@0;1;2 = 1.000000 // 0.000000 to 1.000000`nVolume@0;1;2 = 1.000000 // 0.000000 to 1.000000`n" +
+           "CinematicVolume@0;1;2 = 1.000000 // 0.000000 to 1.000000`nAudioWantedChannelsNumber@0;3;4 = 6 // 0 to 16`n" +
+           "SoundOutputDevice@0;5;6 = Cuffie USB`nAltraVoce@0;9;9 = invariata // non toccare`n"
+    $prof = "// Audio mix`nAudioMixPreset@0;7;8 = home_theater`nAltShellShock@0;1;1 = true`nMonoSound@0;1;1 = true`n" +
+            "MuteLicensedMusic@0;1;1 = true`nMuteAudioWhileOutOfFocus@0;1;1 = true`nImmerseSpatialAudio@0;1;1 = true`n" +
+            "Volume@0;9;9 = 0.200000 // 0.000000 to 1.000000`nMusicVolume@0;9;9 = 1.000000 // x`nVoiceVolume@0;9;9 = 1.000000 // x`n" +
+            "EffectsVolume@0;9;9 = 0.100000 // x`nCinematicVolume@0;9;9 = 1.000000 // x`n"
+    [IO.File]::WriteAllText((Join-Path $d 's.1.0.cod26.txt'), $sys)
+    [IO.File]::WriteAllText((Join-Path $d 's.1.0.cod25.txt'), $sys)
+    [IO.File]::WriteAllText((Join-Path $d '123\g.cod26.1.0.l.txt'), $prof)
+    $d
+}
+$cd = New-FakeCod
+$found = Find-CodSettingsFiles $cd
+Check 'trova la versione più recente del gioco (cod26)' { $found.Version -eq 'cod26' -and $found.Profiles.Count -eq 1 }
+$chk = @(Invoke-CodAudioSetup -PlayersDir $cd -CheckOnly)
+Check 'solo controllo: non modifica i file' { (Get-CodValue ([IO.File]::ReadAllText((Join-Path $cd 's.1.0.cod26.txt'))) 'MusicVolume') -eq '1.000000' }
+Check 'solo controllo: segnala le voci sbagliate' { @($chk | Where-Object Status -eq 'FAIL').Count -ge 10 }
+$res = @(Invoke-CodAudioSetup -PlayersDir $cd)
+Check 'applica e verifica: tutte le voci nei file sono OK' { @($res | Where-Object { $_.Status -notin 'OK', 'MANUAL' }).Count -eq 0 }
+Check 'voci non presenti nei file restano «a mano» (2)' { @($res | Where-Object Status -eq 'MANUAL').Count -eq 2 }
+$sysTxt = [IO.File]::ReadAllText((Join-Path $cd 's.1.0.cod26.txt'))
+Check 'valori scritti correttamente' { (Get-CodValue $sysTxt 'Volume') -eq '0.800000' -and (Get-CodValue $sysTxt 'AudioWantedChannelsNumber') -eq '2' }
+Check 'commenti di fine riga conservati' { $sysTxt -match '(?m)^MusicVolume@0;1;2 = 0\.000000 // 0\.000000 to 1\.000000$' }
+Check 'dispositivo riportato a «predefinito» (vuoto)' { $sysTxt -match '(?m)^SoundOutputDevice@0;5;6 =$' }
+Check 'altre voci non toccate' { $sysTxt -match '(?m)^AltraVoce@0;9;9 = invariata // non toccare$' }
+Check 'versione vecchia del gioco non toccata' { (Get-CodValue ([IO.File]::ReadAllText((Join-Path $cd 's.1.0.cod25.txt'))) 'MusicVolume') -eq '1.000000' }
+Check 'profilo: Mix audio Cuffie' { (Get-CodValue ([IO.File]::ReadAllText((Join-Path $cd '123\g.cod26.1.0.l.txt'))) 'AudioMixPreset') -eq 'headphones_rex' }
+$h1 = (Get-FileHash (Join-Path $cd 's.1.0.cod26.txt')).Hash
+[void](Invoke-CodAudioSetup -PlayersDir $cd)
+Check 'seconda esecuzione: nessuna modifica' { (Get-FileHash (Join-Path $cd 's.1.0.cod26.txt')).Hash -eq $h1 }
+Check 'nessun file temporaneo rimasto' { @(Get-ChildItem $cd -Recurse -Filter '*.modaudiocod-tmp').Count -eq 0 }
+Check 'protezione: in test non scrive sulle vere impostazioni del gioco' {
+    if (-not (Find-CodSettingsFiles)) { return $true }   # gioco non installato: niente da proteggere
+    try { [void](Invoke-CodAudioSetup); $false } catch { $_.Exception.Message -match 'bloccata' }
+}
+# Compensazione udito: file binario finto con la firma e il valore.
+function Set-FakeHearing([string]$Dir, [int]$Value, [switch]$NoSignature) {
+    $bytes = New-Object byte[] 500
+    if (-not $NoSignature) {
+        [Array]::Copy($script:CodHearingSignature, 0, $bytes, 200, $script:CodHearingSignature.Length)
+        $bytes[200 + $script:CodHearingSignature.Length] = [byte]$Value
+    }
+    [IO.File]::WriteAllBytes((Join-Path $Dir '123\g.cod26.1.0.b'), $bytes)
+}
+function HearingStatus([string]$Dir) { (@(Invoke-CodAudioSetup -PlayersDir $Dir -CheckOnly) | Where-Object Label -like 'Compensazione*').Status }
+Set-FakeHearing $cd 0
+Check 'compensazione udito su No: VERIFICATA' { (HearingStatus $cd) -eq 'VERIFIED' }
+Set-FakeHearing $cd 1
+Check 'compensazione udito ATTIVA: segnalata in rosso' { (HearingStatus $cd) -eq 'FAIL' }
+$hb = (Get-FileHash (Join-Path $cd '123\g.cod26.1.0.b')).Hash
+[void](Invoke-CodAudioSetup -PlayersDir $cd)
+Check 'compensazione udito: il file binario NON viene mai modificato' { (Get-FileHash (Join-Path $cd '123\g.cod26.1.0.b')).Hash -eq $hb }
+Set-FakeHearing $cd 0 -NoSignature
+Check 'compensazione udito non trovata: resta «a mano»' { (HearingStatus $cd) -eq 'MANUAL' }
+Remove-Item (Join-Path $cd '123\g.cod26.1.0.b')
+
+$missing = @(Invoke-CodAudioSetup -PlayersDir (Join-Path $cd 'non-esiste'))
+Check 'gioco non trovato: tutte le voci «a mano»' { @($missing | Where-Object { $_.Status -notin 'MISSING', 'MANUAL' }).Count -eq 0 }
+if (@(Get-ApoPlaybackDevices).Count -gt 0) {
+    $cd2 = New-FakeCod
+    $out = & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scripts 'install.ps1') -ConfigDir (New-Sandbox "x") -NoPause -Fast -CodPlayersDir $cd2 2>&1 | Out-String
+    Check 'installer: imposta le voci di Warzone' { $LASTEXITCODE -eq 0 -and $out -match 'Mix audio: Cuffie \.+ IMPOSTATO' -and $out -match 'Compensazione udito asimmetrico: No \.+ CONTROLLA A MANO' }
+}
 
 Write-Host "`n== Curva EQ ==" -ForegroundColor Cyan
 $presetText = Get-Content (Join-Path $root 'presets\warzone_passi.txt') -Raw

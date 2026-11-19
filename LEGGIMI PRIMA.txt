@@ -22,6 +22,10 @@ MOD AUDIO COD by Lozy - LEGGIMI PRIMA
 4) Da qui in poi segui la finestra-guida in basso a destra:
    ti dice cosa cliccare a ogni passaggio.
 
+5) TIENI WARZONE CHIUSO: il programma imposta da solo l'audio del gioco
+   e ti avvisa in rosso se "Compensazione udito asimmetrico" e' attiva:
+   in quel caso mettila su No nel gioco (altrimenti l'audio suona tappato).
+
 PER TOGLIERE TUTTO in qualsiasi momento: doppio clic su
 Rimuovi-EqualizerAPO.bat  (l'audio di Windows torna com'era prima).
 

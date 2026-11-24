@@ -132,6 +132,18 @@ try {
                Where-Object { (Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue).DeviceState -eq 1 })
     Write-Status '>>' 'Scansione uscite audio di Windows' ("{0} TROVATE" -f $allOut.Count)
 
+    # Equalizer APO riavvia l'audio di Windows: un gioco aperto in quel momento
+    # perde il dispositivo audio e puo' chiudersi. Prima si chiude Warzone.
+    if (-not $ConfigDir -and -not $NoPause) {
+        while (Test-CodRunning) {
+            Write-Status '!!' 'Call of Duty è aperto: chiudilo prima di installare' 'IN ATTESA' Yellow
+            $ans = [Windows.Forms.MessageBox]::Show(
+                "Call of Duty è aperto.`n`nL'installazione riavvia l'audio di Windows: con il gioco aperto potrebbe chiudersi di colpo.`n`nChiudi Call of Duty (e il suo launcher: Battle.net, Steam o app Xbox) e premi «Riprova».",
+                'Mod Audio COD', 'RetryCancel', 'Warning')
+            if ($ans -ne 'Retry') { throw 'Installazione annullata: chiudi Call of Duty e riprova.' }
+        }
+    }
+
     # --- 1. Equalizer APO --------------------------------------------------
     $apo = $null
     if ($ConfigDir) {
@@ -252,12 +264,15 @@ try {
     # --- Impostazioni audio di Warzone ----------------------------------------
     if (-not $SkipCod) {
         Write-Section 'IMPOSTAZIONI DI WARZONE'
-        $codDir = if ($CodPlayersDir) { $CodPlayersDir } else { $script:CodDefaultPlayersDir }
+        $codDir = if ($CodPlayersDir) { @($CodPlayersDir) } else { @(Get-CodPlayersDirs) }
         $codFiles = Find-CodSettingsFiles $codDir
         $codMode = 'applied'
-        if (-not $codFiles) {
-            Write-Status '!!' 'File delle impostazioni di Warzone' 'NON TROVATI' Yellow
+        if (-not $codFiles -or $codFiles.Buffered) {
+            Write-Status '!!' 'File delle impostazioni di Warzone' $(if ($codFiles) { 'FORMATO DIVERSO' } else { 'NON TROVATI' }) Yellow
+            Write-Host '        └─ Normale con Xbox app / Game Pass: il preset per i passi funziona lo stesso.' -ForegroundColor Gray
+            Write-Host '           Imposta le voci qui sotto a mano nel gioco (Impostazioni › Audio).' -ForegroundColor Gray
             $codMode = 'manual'
+            $codFiles = $null
         } elseif (-not $CodPlayersDir) {
             # Warzone aperto: salverebbe sopra le modifiche alla chiusura.
             while (Test-CodRunning) {
@@ -275,7 +290,7 @@ try {
             switch ($r.Status) {
                 'OK'      { Write-Status 'OK' "$($r.Label): $($r.Show)" $(if ($codMode -eq 'applied') { 'IMPOSTATO' } else { 'GIÀ OK' }) }
                 'VERIFIED' { Write-Status '!!' "$($r.Label): $($r.Show)" 'RISULTA NO · CONTROLLA' Yellow }
-                'MANUAL'  { Write-Status '!!' "$($r.Label): $($r.Show)" 'CONTROLLA A MANO' Yellow }
+                'MANUAL'  { Write-Status '!!' "$($r.Label): $($r.Show)" $(if ($codMode -eq 'manual' -and $r.Detail) { 'IMPOSTA A MANO' } else { 'CONTROLLA A MANO' }) Yellow }
                 default   { Write-Status 'ERR' "$($r.Label): $($r.Show)" 'DA FARE A MANO' Red }
             }
         }
@@ -298,7 +313,8 @@ try {
             Write-Status '!!' 'Riavvio del PC' 'TRA 15 SECONDI' Yellow
             shutdown.exe /r /t 15 /c "Mod Audio COD: riavvio per attivare Equalizer APO"
         } else {
-            Write-Status '!!' 'Ricordati di riavviare il PC prima di giocare' '' Yellow
+            Write-Status '!!' 'Riavvia il PC PRIMA di aprire Call of Duty' '' Yellow
+            Show-Info "⚠ Ricordati: riavvia il PC prima di aprire Call of Duty.`n`nFinché non riavvii, Equalizer APO non è attivo e il gioco potrebbe chiudersi o restare senza audio." 'Mod Audio COD' 'Warning'
         }
     } elseif (-not $NoPause) {
         Show-Info "✅ Fatto! Il preset è attivo da subito, non serve riavviare.`n`n$tips"

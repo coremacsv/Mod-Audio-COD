@@ -207,6 +207,48 @@ Remove-Item (Join-Path $cd '123\g.cod26.1.0.b')
 
 $missing = @(Invoke-CodAudioSetup -PlayersDir (Join-Path $cd 'non-esiste'))
 Check 'gioco non trovato: tutte le voci «a mano»' { @($missing | Where-Object { $_.Status -notin 'MISSING', 'MANUAL' }).Count -eq 0 }
+
+Write-Host "`n== Simulazione launcher (Battle.net / Steam / Xbox) ==" -ForegroundColor Cyan
+$dirs = @(Get-CodPlayersDirs)
+Check 'cartelle cercate: Battle.net e Documenti' {
+    ($dirs -contains $script:CodDefaultPlayersDir) -and
+    ($dirs -contains (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Call of Duty\players'))
+}
+Check 'cartelle cercate: nessun doppione' { @($dirs | ForEach-Object { $_.ToLowerInvariant() } | Select-Object -Unique).Count -eq $dirs.Count }
+# Steam / Documenti: la cartella di Battle.net non esiste, i file sono nella seconda.
+$noBnet = Join-Path $env:TEMP ('fseq-test-bnet-' + [guid]::NewGuid().ToString('N'))
+$steam = New-FakeCod
+$fs = Find-CodSettingsFiles @($noBnet, $steam)
+Check 'Steam/Documenti: trova i file nella seconda cartella' { $fs -and -not $fs.Buffered -and $fs.Dir -eq $steam -and $fs.Version -eq 'cod26' }
+$rs = @(Invoke-CodAudioSetup -PlayersDir @($noBnet, $steam))
+Check 'Steam/Documenti: imposta e verifica le voci' { @($rs | Where-Object Status -eq 'OK').Count -ge 12 -and (Get-CodValue ([IO.File]::ReadAllText((Join-Path $steam 's.1.0.cod26.txt'))) 'MusicVolume') -eq '0.000000' }
+# Due launcher installati: vince la versione piu' recente del gioco.
+$old = Join-Path $env:TEMP ('fseq-test-old-' + [guid]::NewGuid().ToString('N')); New-Item -ItemType Directory $old | Out-Null
+[IO.File]::WriteAllText((Join-Path $old 's.1.0.cod24.txt'), "Volume@0;1;2 = 1.000000`n")
+Check 'due launcher: sceglie la versione più recente' { (Find-CodSettingsFiles @($old, (New-FakeCod))).Version -eq 'cod26' }
+# Formato a doppio file (txt0/txt1 + .m): mai modificato, solo a mano.
+$buf = Join-Path $env:TEMP ('fseq-test-buf-' + [guid]::NewGuid().ToString('N')); New-Item -ItemType Directory (Join-Path $buf '123') | Out-Null
+foreach ($n in 's.1.0.cod26.txt0', 's.1.0.cod26.txt1', '123\g.cod26.1.0.l.txt0') { [IO.File]::WriteAllText((Join-Path $buf $n), "MusicVolume@0;1;2 = 1.000000 // x`n") }
+[IO.File]::WriteAllText((Join-Path $buf 's.1.0.cod26.m'), '0')
+$bufHash = @(Get-ChildItem $buf -Recurse -File | Get-FileHash | ForEach-Object Hash) -join ''
+Check 'doppio file: riconosciuto come formato diverso' { (Find-CodSettingsFiles @($buf)).Buffered }
+$rb = @(Invoke-CodAudioSetup -PlayersDir @($buf))
+Check 'doppio file: nessun file modificato' { (@(Get-ChildItem $buf -Recurse -File | Get-FileHash | ForEach-Object Hash) -join '') -eq $bufHash }
+Check 'doppio file: tutte le voci «a mano», nessun errore' { @($rb | Where-Object Status -ne 'MANUAL').Count -eq 0 }
+Check 'doppio file: nessun file temporaneo' { @(Get-ChildItem $buf -Recurse -Filter '*.modaudiocod-tmp').Count -eq 0 }
+# Xbox app: nessun file leggibile.
+$rx = @(Invoke-CodAudioSetup -PlayersDir @($noBnet))
+Check 'Xbox (nessun file): tutte le voci «a mano», nessun errore' { @($rx | Where-Object Status -ne 'MANUAL').Count -eq 0 }
+if (@(Get-ApoPlaybackDevices).Count -gt 0) {
+    $ox = & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scripts 'install.ps1') -ConfigDir (New-Sandbox "x") -NoPause -Fast -CodPlayersDir $noBnet 2>&1 | Out-String
+    Check 'installer Xbox: esce con codice 0' { $LASTEXITCODE -eq 0 }
+    Check 'installer Xbox: nessuna riga ERR' { $ox -notmatch '\[ERR\]' }
+    Check 'installer Xbox: spiega di impostare a mano' { $ox -match 'Xbox app' -and $ox -match 'Mix audio: Cuffie \.+ IMPOSTA A MANO' }
+    $ob = & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scripts 'install.ps1') -ConfigDir (New-Sandbox "x") -NoPause -Fast -CodPlayersDir $buf 2>&1 | Out-String
+    Check 'installer doppio file: nessuna riga ERR' { $LASTEXITCODE -eq 0 -and $ob -notmatch '\[ERR\]' -and $ob -match 'FORMATO DIVERSO' }
+}
+Get-ChildItem $env:TEMP -Directory | Where-Object Name -match '^fseq-test-(old|buf)-' | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
 if (@(Get-ApoPlaybackDevices).Count -gt 0) {
     $cd2 = New-FakeCod
     $out = & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scripts 'install.ps1') -ConfigDir (New-Sandbox "x") -NoPause -Fast -CodPlayersDir $cd2 2>&1 | Out-String

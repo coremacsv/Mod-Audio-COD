@@ -10,6 +10,23 @@
 
 $script:CodDefaultPlayersDir = Join-Path $env:LOCALAPPDATA 'Activision\Call of Duty\players'
 
+# Ogni launcher salva le impostazioni in un posto diverso:
+#   Battle.net            %LOCALAPPDATA%\Activision\Call of Duty\players
+#   Steam / altre versioni Documenti\Call of Duty\players (anche se Documenti e' su OneDrive)
+#   Xbox app / Game Pass  spesso non sono file leggibili: in quel caso si impostano a mano.
+function Get-CodPlayersDirs {
+    $docs = [Environment]::GetFolderPath('MyDocuments')
+    $all = @(
+        $script:CodDefaultPlayersDir
+        $(if ($docs) { Join-Path $docs 'Call of Duty\players' })
+        (Join-Path $env:USERPROFILE 'Documents\Call of Duty\players')
+        (Join-Path $env:USERPROFILE 'OneDrive\Documents\Call of Duty\players')
+        (Join-Path $env:USERPROFILE 'OneDrive\Documenti\Call of Duty\players')
+    ) | Where-Object { $_ }
+    $seen = @{}
+    foreach ($d in $all) { $k = $d.TrimEnd('\').ToLowerInvariant(); if (-not $seen[$k]) { $seen[$k] = $true; $d } }
+}
+
 # File: 's' = file di sistema, 'g' = file del profilo, 'sg' = entrambi, '' = solo a mano.
 $script:CodAudioSettings = @(
     [pscustomobject]@{ Section = 'VOLUMI';            Label = 'Volume di gioco generale';                 Show = '80';                               Files = 'sg'; Key = 'Volume';                   Value = '0.800000' }
@@ -29,19 +46,30 @@ $script:CodAudioSettings = @(
     [pscustomobject]@{ Section = 'FUNZIONALITÀ';      Label = 'Avvisi per colpi alla testa e uccisioni';  Show = 'Sì';                               Files = '';   Key = '';                         Value = '' }
 )
 
-# Trova i file di impostazioni della versione piu' recente del gioco.
-function Find-CodSettingsFiles([string]$PlayersDir = $script:CodDefaultPlayersDir) {
-    if (-not (Test-Path $PlayersDir)) { return $null }
-    $sys = Get-ChildItem $PlayersDir -File -Filter 's.1.0.cod*.txt' -ErrorAction SilentlyContinue |
-           Where-Object { $_.Name -match '^s\.1\.0\.cod(\d+)\.txt$' } |
-           Sort-Object { [int]([regex]::Match($_.Name, 'cod(\d+)').Groups[1].Value) }, LastWriteTime -Descending |
-           Select-Object -First 1
-    if (-not $sys) { return $null }
-    $ver = [regex]::Match($sys.Name, 'cod(\d+)').Groups[1].Value
-    $prof = @(Get-ChildItem $PlayersDir -Directory -ErrorAction SilentlyContinue | ForEach-Object {
-        Get-ChildItem $_.FullName -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "^g(\.p)?\.cod$ver\.[\d.]+\.l\.txt$" }
+# Trova i file di impostazioni della versione piu' recente del gioco, cercando
+# in tutte le cartelle dei launcher. Se la versione piu' recente usa il formato
+# a doppio file (s.1.0.codNN.txt0 / .txt1 + .m) restituisce Buffered = $true:
+# quel formato non e' verificato, quindi NON viene mai modificato.
+function Find-CodSettingsFiles([string[]]$PlayersDir = @(Get-CodPlayersDirs)) {
+    $cands = @(foreach ($dir in $PlayersDir) {
+        if (-not $dir -or -not (Test-Path -LiteralPath $dir)) { continue }
+        Get-ChildItem -LiteralPath $dir -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -match '^s\.1\.0\.cod(\d+)\.txt[01]?$' } |
+            ForEach-Object {
+                $v = [int][regex]::Match($_.Name, '^s\.1\.0\.cod(\d+)\.').Groups[1].Value
+                [pscustomobject]@{ File = $_; Dir = $dir; Ver = $v; Plain = $_.Name.EndsWith('.txt') }
+            }
     })
-    [pscustomobject]@{ Version = "cod$ver"; System = $sys.FullName; Profiles = @($prof | ForEach-Object FullName) }
+    if (-not $cands) { return $null }
+    $best = $cands | Sort-Object Ver, Plain, { $_.File.LastWriteTime } -Descending | Select-Object -First 1
+    $ver = $best.Ver
+    if (-not $best.Plain) {
+        return [pscustomobject]@{ Version = "cod$ver"; Dir = $best.Dir; System = $null; Profiles = @(); Buffered = $true }
+    }
+    $prof = @(Get-ChildItem -LiteralPath $best.Dir -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+        Get-ChildItem -LiteralPath $_.FullName -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "^g(\.p)?\.cod$ver\.[\d.]+\.l\.txt$" }
+    })
+    [pscustomobject]@{ Version = "cod$ver"; Dir = $best.Dir; System = $best.File.FullName; Profiles = @($prof | ForEach-Object FullName); Buffered = $false }
 }
 
 # True se Call of Duty e' in esecuzione (salverebbe sopra le modifiche alla chiusura).
@@ -115,17 +143,21 @@ function Test-CodValueEqual([string]$Actual, [string]$Want) {
 # Applica (se non -CheckOnly) e verifica. Restituisce una riga per voce con
 # Status: OK (impostata e verificata), FAIL (non riuscita), MISSING (voce o
 # file non trovati), MANUAL (non presente nei file: va fatta a mano).
-function Invoke-CodAudioSetup([string]$PlayersDir = $script:CodDefaultPlayersDir, [switch]$CheckOnly) {
+function Invoke-CodAudioSetup([string[]]$PlayersDir = @(Get-CodPlayersDirs), [switch]$CheckOnly) {
     $files = Find-CodSettingsFiles $PlayersDir
+    # Formato non verificato: solo a mano, nessuna scrittura.
+    if ($files -and $files.Buffered) { $files = $null }
     $texts = @{}
     if ($files) {
         foreach ($f in @($files.System) + $files.Profiles) { $texts[$f] = [IO.File]::ReadAllText($f) }
     }
     $changed = @{}
     # Protezione per i test automatici: mai scrivere sulle vere impostazioni del gioco.
-    if ($env:MODAUDIOCOD_TEST -eq '1' -and -not $CheckOnly -and $files -and
-        ([IO.Path]::GetFullPath($PlayersDir).TrimEnd('\') -ieq [IO.Path]::GetFullPath($script:CodDefaultPlayersDir).TrimEnd('\'))) {
-        throw 'TEST: scrittura sulle vere impostazioni di Warzone bloccata.'
+    if ($env:MODAUDIOCOD_TEST -eq '1' -and -not $CheckOnly -and $files) {
+        $real = @(Get-CodPlayersDirs | ForEach-Object { [IO.Path]::GetFullPath($_).TrimEnd('\') })
+        if ($real -contains [IO.Path]::GetFullPath($files.Dir).TrimEnd('\')) {
+            throw 'TEST: scrittura sulle vere impostazioni di Warzone bloccata.'
+        }
     }
     if ($files -and -not $CheckOnly) {
         foreach ($s in $script:CodAudioSettings | Where-Object Files) {
@@ -152,7 +184,7 @@ function Invoke-CodAudioSetup([string]$PlayersDir = $script:CodDefaultPlayersDir
     # Verifica: rilegge i file dal disco.
     $fresh = @{}
     if ($files) { foreach ($f in $texts.Keys) { $fresh[$f] = [IO.File]::ReadAllText($f) } }
-    $hearing = @(if ($files) { Get-CodHearingCompensation $PlayersDir $files.Version })
+    $hearing = @(if ($files) { Get-CodHearingCompensation $files.Dir $files.Version })
     foreach ($s in $script:CodAudioSettings) {
         $status = 'MANUAL'; $detail = ''
         if ($s.Label -like 'Compensazione udito*') {
@@ -163,7 +195,8 @@ function Invoke-CodAudioSetup([string]$PlayersDir = $script:CodDefaultPlayersDir
                 else { $status = 'VERIFIED' }
             }
         } elseif ($s.Files) {
-            if (-not $files) { $status = 'MISSING'; $detail = 'file del gioco non trovati' }
+            # File non trovati (es. Xbox app): non e' un errore, la voce va solo impostata a mano.
+            if (-not $files) { $status = 'MANUAL'; $detail = 'file del gioco non trovati' }
             else {
                 $targets = @()
                 if ($s.Files -match 's') { $targets += $files.System }

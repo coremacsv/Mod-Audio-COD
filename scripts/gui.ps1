@@ -120,7 +120,7 @@ function Show-CodSettingsCard($Rows, [string]$Mode = 'applied') {
     $subVolumes = @('Volume musica in gioco', 'Volume dialoghi', 'Volume effetti', 'Volume musica filmati')
     $headline = switch ($Mode) {
         'running' { 'Warzone è aperto: imposta queste voci a mano nel gioco.' }
-        'manual'  { 'Non ho trovato i file di Warzone: imposta queste voci a mano nel gioco.' }
+        'manual'  { 'File di Warzone non trovati (normale con Xbox app): imposta queste voci a mano.' }
         default   { if ($failRows.Count) { "Ho impostato $okCount voci. Quelle in ROSSO vanno cambiate a mano nel gioco." } else { "✓ Ho impostato e verificato $okCount voci. Controlla nel gioco quelle con ⚠." } }
     }
 
@@ -134,7 +134,7 @@ function Show-CodSettingsCard($Rows, [string]$Mode = 'applied') {
     $where.ForeColor = $dim; $where.Font = New-Object Drawing.Font($fam, 10.5)
     $where.Location = New-Object Drawing.Point(26, 46); $where.Size = New-Object Drawing.Size(772, 22)
     $top = New-Object Windows.Forms.Label
-    $top.Text = $headline; $top.ForeColor = $(if ($failRows.Count -or $Mode -ne 'applied') { $red } else { $teal })
+    $top.Text = $headline; $top.ForeColor = $(if ($failRows.Count -or $Mode -eq 'running') { $red } elseif ($Mode -eq 'manual') { $amber } else { $teal })
     $top.Font = New-Object Drawing.Font($fam, 11.5, [Drawing.FontStyle]::Bold)
     $top.Location = New-Object Drawing.Point(24, 72); $top.Size = New-Object Drawing.Size(772, 26)
     $f.Controls.AddRange(@($title, $where, $top))
@@ -171,7 +171,7 @@ function Show-CodSettingsCard($Rows, [string]$Mode = 'applied') {
         if ($isSub -and $null -eq $subTop) { $subTop = $y }
 
         $row = New-Object Windows.Forms.Panel
-        $bad = ($r.Status -in 'FAIL', 'MISSING') -or ($Mode -ne 'applied' -and $r.Status -notin 'OK', 'VERIFIED')
+        $bad = ($r.Status -in 'FAIL', 'MISSING') -or ($Mode -eq 'running' -and $r.Status -notin 'OK', 'VERIFIED', 'MANUAL')
         $row.BackColor = $(if ($bad) { $rowWarn } elseif ($isHearing -or $r.Status -eq 'MANUAL') { $rowAmber } else { $rowBg })
         $row.Location = New-Object Drawing.Point($x, $y); $row.Size = New-Object Drawing.Size($w, 46)
 

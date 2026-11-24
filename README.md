@@ -52,7 +52,15 @@ Per reinstallare tutto in seguito basta di nuovo `Installa.bat`.
 
 Il preset è pensato per queste impostazioni del gioco. Con valori diversi, soprattutto con la **Compensazione udito asimmetrico** attiva, l'audio può sembrare **tappato**.
 
-`Installa.bat` le **imposta e verifica da solo** nei file delle impostazioni del gioco (`%LOCALAPPDATA%\Activision\Call of Duty\players`, le stesse del menu Audio). Poi mostra una schermata riepilogativa: ✓ impostata, ✗ da cambiare a mano, ⚠ da controllare a mano.
+`Installa.bat` le **imposta e verifica da solo** nei file delle impostazioni del gioco, cioè le stesse del menu Audio. Poi mostra una schermata riepilogativa: ✓ impostata, ✗ da cambiare a mano, ⚠ da controllare a mano.
+
+| Launcher | Impostazioni del gioco |
+|---|---|
+| Battle.net | automatiche (`%LOCALAPPDATA%\Activision\Call of Duty\players`) |
+| Steam / altre versioni | automatiche se i file sono in `Documenti\Call of Duty\players`, anche su OneDrive |
+| App Xbox / Game Pass | di solito i file non sono leggibili: la schermata finale elenca le voci da mettere **a mano** |
+
+Il preset per i passi funziona con **tutti** i launcher: cambia solo se le impostazioni del gioco vengono messe in automatico o a mano. Se il gioco usa un formato dei file che il programma non conosce, il programma non li tocca.
 
 | Sezione | Impostazione | Valore | |
 |---|---|---|---|
@@ -96,6 +104,7 @@ Il preset installato si trova nella cartella `config` di Equalizer APO, con il n
 - **Non cambia niente**: Equalizer APO probabilmente è attivo sull'uscita sbagliata. Apri *Start → Equalizer APO → Device Selector*, spunta le cuffie, riavvia ed esegui di nuovo `Installa.bat`.
 - **Hai cambiato cuffie**: esegui di nuovo `Installa.bat`, che aggiorna il preset sulle nuove uscite.
 - **Cuffie con un loro software** (G HUB, iCUE, SteelSeries GG…): spegni l'equalizzatore di quel software, altrimenti si somma a questo.
+- **Il gioco si chiude appena lo apri** (dopo l'installazione): riavvia il PC. Equalizer APO si attiva solo dopo il riavvio. Installa sempre con Call of Duty e il suo launcher chiusi: `Installa.bat` te lo chiede. Se si chiude ancora dopo il riavvio, togli tutto con `Rimuovi-EqualizerAPO.bat` e apri una segnalazione su GitHub.
 - **Il suono è troppo basso**: alza il volume di Windows. Il preset abbassa leggermente il volume generale per evitare distorsioni.
 
 ## Come funziona
